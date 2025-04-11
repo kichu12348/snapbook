@@ -1,1 +1,1 @@
-export const endpoint="http://192.168.1.41:5000"
+export const endpoint=" https://snap-book.ddns.net"
