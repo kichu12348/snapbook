@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
+import React, { createContext, useState, useContext, useRef, useEffect, use } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -174,16 +174,16 @@ export const ScrapbookProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.get(`${API_URL}/api/scrapbooks`, {
+      const response = await axios.get(`/api/scrapbooks`, {
         headers: { 'x-auth-token': userToken }
       });
       
       setScrapbooks(response.data);
       return response.data;
     } catch (error) {
+      console.log('Failed to fetch scrapbooks:', error.message);
       const message = error.response?.data?.message || 'Failed to fetch scrapbooks';
       setError(message);
-      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -200,7 +200,7 @@ export const ScrapbookProvider = ({ children }) => {
         cleanupScrapbookEvents(currentScrapbook._id);
       }
       
-      const response = await axios.get(`${API_URL}/api/scrapbooks/${scrapbookId}`, {
+      const response = await axios.get(`/api/scrapbooks/${scrapbookId}`, {
         headers: { 'x-auth-token': userToken }
       });
       
@@ -225,7 +225,7 @@ export const ScrapbookProvider = ({ children }) => {
     if (!userToken || !scrapbookId) return;
     
     try {
-      const response = await axios.get(`${API_URL}/api/scrapbooks/${scrapbookId}/timeline`, {
+      const response = await axios.get(`/api/scrapbooks/${scrapbookId}/timeline`, {
         headers: { 'x-auth-token': userToken }
       });
       
@@ -246,7 +246,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${API_URL}/api/scrapbooks`,
+        `/api/scrapbooks`,
         { title },
         { headers: { 'x-auth-token': userToken } }
       );
@@ -254,6 +254,7 @@ export const ScrapbookProvider = ({ children }) => {
       setScrapbooks(prev => [response.data, ...prev]);
       return response.data;
     } catch (error) {
+      console.log('Error creating scrapbook:', error.message);
       const message = error.response?.data?.message || 'Failed to create scrapbook';
       setError(message);
       Alert.alert('Error', message);
@@ -270,7 +271,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       const response = await axios.put(
-        `${API_URL}/api/scrapbooks/${scrapbookId}/title`,
+        `/api/scrapbooks/${scrapbookId}/title`,
         { title },
         { headers: { 'x-auth-token': userToken } }
       );
@@ -306,7 +307,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${API_URL}/api/scrapbooks/${scrapbookId}/items`,
+        `/api/scrapbooks/${scrapbookId}/items`,
         item,
         { headers: { 'x-auth-token': userToken } }
       );
@@ -343,7 +344,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       await axios.delete(
-        `${API_URL}/api/scrapbooks/${scrapbookId}/items/${itemId}`,
+        `/api/scrapbooks/${scrapbookId}/items/${itemId}`,
         { headers: { 'x-auth-token': userToken } }
       );
       
@@ -377,7 +378,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${API_URL}/api/scrapbooks/${scrapbookId}/collaborators`,
+        `/api/scrapbooks/${scrapbookId}/collaborators`,
         { username },
         { headers: { 'x-auth-token': userToken } }
       );
@@ -417,7 +418,7 @@ export const ScrapbookProvider = ({ children }) => {
     
     try {
       await axios.delete(
-        `${API_URL}/api/scrapbooks/${scrapbookId}/collaborators/${collaboratorId}`,
+        `/api/scrapbooks/${scrapbookId}/collaborators/${collaboratorId}`,
         { headers: { 'x-auth-token': userToken } }
       );
       
