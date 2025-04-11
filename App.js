@@ -6,6 +6,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Updates from "expo-updates";
+import {enableScreens} from "react-native-screens";
+enableScreens(false);
 
 // Import screens
 import LoginScreen from "./src/screens/LoginScreen";
