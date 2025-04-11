@@ -217,7 +217,6 @@ export const ScrapbookProvider = ({ children }) => {
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to fetch scrapbook';
       setError(message);
-      Alert.alert('Error', message);
     }
   };
   
