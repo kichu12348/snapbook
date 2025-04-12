@@ -124,7 +124,7 @@ function MainNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0F24",
+    backgroundColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
   },

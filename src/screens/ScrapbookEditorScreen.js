@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Modal,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -67,21 +67,20 @@ const StarySkyBackground = () => {
 };
 
 //
-const ImageViewOverlay = ({ imageUri, onClose, animatedImage}) => {
-  if(!imageUri) return null;
+const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
+  if (!imageUri) return null;
   return (
     <Animated.View style={[styles.imageViewOverlay, animatedImage]}>
       <BlurComponent blur={50} />
-        <LinearGradient
-          colors={["#000000", "transparent", "transparent", "transparent"]}
-          style={StyleSheet.absoluteFill}
-        />
+      <LinearGradient
+        colors={["#000000", "transparent", "transparent", "transparent"]}
+        style={StyleSheet.absoluteFill}
+      />
       <TouchableOpacity
         style={StyleSheet.absoluteFill}
         onPress={onClose}
         activeOpacity={1}
       >
-        
         <View style={styles.imageHeader}>
           <TouchableOpacity onPress={onClose} style={styles.overlayCloseButton}>
             <Ionicons name="close" size={30} color="#FFFFFF" />
@@ -127,7 +126,11 @@ const RenderImageItem = React.memo(
         }}
       >
         <Image
-          source={{ uri: item.uri }}
+          source={{
+            uri:
+              item.uri ||
+              "https://storage.googleapis.com/snapbook_bucket/temp-image.webp",
+          }}
           style={styles.imageItem}
           cachePolicy={"memory-disk"}
           transition={1000}
@@ -195,18 +198,25 @@ const RenderTextItem = React.memo(
 
 // Timeline component
 const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
+  // if(item.action ==="added" && item.itemType === "image" && item.user.username==="ramanan"){
+  //   console.log("item",item)
+  // }
   return (
     <View style={styles.timelineItem}>
       <View style={styles.timelineUserContainer}>
-        <Image
-          source={{
-            uri:
-              item.user?.avatar ||
-              "https://randomuser.me/api/portraits/lego/1.jpg",
-          }}
-          style={styles.timelineAvatar}
-          cachePolicy="memory-disk"
-        />
+        {item.user?.avatar ? (
+          <Image
+            source={{
+              uri:
+                item.user?.avatar ||
+                "https://randomuser.me/api/portraits/lego/1.jpg",
+            }}
+            style={styles.timelineAvatar}
+            cachePolicy="memory-disk"
+          />
+        ) : (
+          <Ionicons name="person-circle-outline" size={24} color="#5C6BC0" />
+        )}
       </View>
 
       <View style={styles.timelineContent}>
@@ -277,15 +287,21 @@ const ActiveUsersComponent = ({ activeUsers, userData }) => {
                   index > 0 && { marginLeft: -8 },
                 ]}
               >
-                <Image
-                  source={{
-                    uri:
-                      user.avatar ||
-                      "https://randomuser.me/api/portraits/lego/2.jpg",
-                  }}
-                  style={styles.activeUserAvatar}
-                  cachePolicy="memory-disk"
-                />
+                {user.avatar ? (
+                  <Image
+                    source={{
+                      uri: user.avatar,
+                    }}
+                    style={styles.activeUserAvatar}
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <Ionicons
+                    name="person-circle-outline"
+                    size={24}
+                    color="#5C6BC0"
+                  />
+                )}
               </View>
             )
         )}
@@ -305,7 +321,9 @@ const CollaboratorsList = ({
 
   return (
     <View style={styles.collaboratorsContainer}>
-      <Text style={styles.collaboratorsTitle}>Collaborators</Text>
+      <Text style={styles.collaboratorsTitle}>
+        <Ionicons name="people" size={14} color="#FFCA80" /> Snap Fam
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -444,15 +462,21 @@ const CollaboratorOverlayComponent = ({
                 onPress={() => handleSelectCollaborator(user)}
               >
                 <View style={styles.userAvatarContainer}>
-                  <Image
-                    source={{
-                      uri:
-                        user.avatar ||
-                        "https://randomuser.me/api/portraits/lego/0.jpg",
-                    }}
-                    style={styles.userAvatar}
-                    cachePolicy="memory-disk"
-                  />
+                  {user.avatar ? (
+                    <Image
+                      source={{
+                        uri: user.avatar,
+                      }}
+                      style={styles.userAvatar}
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={35}
+                      color="#5C6BC0"
+                    />
+                  )}
                 </View>
 
                 <View style={styles.userInfo}>
@@ -596,6 +620,10 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     [searchQuery, userToken]
   );
 
+  const isOwner = React.useMemo(() => {
+    return currentScrapbook?.owner._id === userData?._id;
+  }, [currentScrapbook]);
+
   // Handle search input change
   const handleSearchChange = (text) => {
     setSearchQuery(text);
@@ -605,6 +633,23 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   // Handle collaborator selection
   const handleSelectCollaborator = async (user) => {
     try {
+      // Check if the user is already a collaborator
+      const isAlreadyCollaborator = collaborators.some(
+        (collab) => collab._id === user._id
+      );
+      if (isAlreadyCollaborator) {
+        setNotificationOverlay({
+          visible: true,
+          title: "Already a Collaborator",
+          message: `${user.username} is already a collaborator.`,
+          onDismiss: null,
+        });
+        setSearchQuery("");
+        setSearchResults([]);
+        setIsAddingCollaborator(false);
+        closeCollaboratorModal();
+        return;
+      }
       const result = await addCollaborator(scrapbookId, user.username);
 
       if (result) {
@@ -628,13 +673,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       );
     }
   };
-
-  // Clean up when unmounting
-  useEffect(() => {
-    return () => {
-      clearCurrentScrapbook();
-    };
-  }, []);
 
   // Load scrapbook data from backend
   useEffect(() => {
@@ -764,6 +802,14 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       });
     }
   };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("transitionStart", (e) => {
+      if (e.data.closing) clearCurrentScrapbook(scrapbookId);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const MemoizedStarySkyBackground = useMemo(() => <StarySkyBackground />, []);
 
@@ -1018,6 +1064,10 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     if (!result.canceled && result.assets && result.assets[0]) {
       const fileUri = result.assets[0].uri;
       const imageUri = await uploadImage(fileUri);
+      if (!imageUri) {
+        Alert.alert("Error", "Failed to upload image. Please try again.");
+        return;
+      }
       if (isNew) {
         // For new scrapbooks, store locally until saved
         const newItem = {
@@ -1342,6 +1392,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   const closeCollaboratorModal = () => {
+    Keyboard.dismiss();
+    setCollaboratorUsername("");
     setIsAddingCollaborator(false);
     collabModalTranlateY.value = withTiming(height, {
       duration: 300,
@@ -1585,6 +1637,16 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
               color={showTimeline ? "#FFCA80" : "#9575CD"}
             />
           </TouchableOpacity>
+          {/* <LinearGradient
+            colors={["#000000","rgba(0,0,0,0.8)", "transparent"]}
+            style={{
+              position: "absolute",
+              top:20,
+              left: 0,
+              width: width,
+              height: 100,
+            }}
+          /> */}
         </View>
 
         {/* Text input overlay */}
@@ -1767,8 +1829,9 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
 
               {!isNew && (
                 <TouchableOpacity
-                  style={styles.toolbarButton}
+                  style={[styles.toolbarButton, !isOwner && { opacity: 0.5 }]}
                   onPress={handleAddCollaborator}
+                  disabled={isAddingCollaborator || !isOwner}
                 >
                   <Ionicons name="people" size={28} color="#FFFFFF" />
                   <Text style={styles.toolbarButtonText}>Add Collaborator</Text>
@@ -1843,11 +1906,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    position:"relative"
   },
   titleTextContainer: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    zIndex: 10,
   },
   titleText: {
     fontSize: 18,
@@ -1858,6 +1923,7 @@ const styles = StyleSheet.create({
   titleEditContainer: {
     flexDirection: "row",
     alignItems: "center",
+    zIndex: 10,
   },
   titleInput: {
     flex: 1,
@@ -1873,6 +1939,7 @@ const styles = StyleSheet.create({
   timelineButton: {
     padding: 8,
     marginLeft: 10,
+    zIndex: 10,
   },
   masonryRow: {
     justifyContent: "space-between",
@@ -2044,6 +2111,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingTop: 50,
     //paddingBottom: 200,
   },
   collageRow: {

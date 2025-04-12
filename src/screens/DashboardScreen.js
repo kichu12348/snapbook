@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
-  StatusBar,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
@@ -24,6 +23,7 @@ import ScrapbookCard from "../components/ScrapbookCard";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
@@ -62,7 +62,8 @@ const DashboardScreen = ({ navigation }) => {
   const addButtonRotate = useSharedValue(0);
 
   const { userData } = useAuth();
-  const { scrapbooks, loading, fetchScrapbooks, createScrapbook } = useScrapbook();
+  const { scrapbooks, loading, fetchScrapbooks, createScrapbook } =
+    useScrapbook();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const MemoizedStarySkyBackground = React.useCallback(() => {
@@ -115,13 +116,20 @@ const DashboardScreen = ({ navigation }) => {
     const formattedScrapbook = {
       id: item._id,
       title: item.title,
-      cover: item.items && item.items.length > 0 && item.items.some(i => i.type === 'image') 
-        ? item.items.find(i => i.type === 'image').content 
-        : 'https://images.unsplash.com/photo-1501785888041-af3ef285b470', // Default image if no images in scrapbook
+      cover:
+        item.items &&
+        item.items.length > 0 &&
+        item.items.some((i) => i.type === "image")
+          ? item.items.find((i) => i.type === "image").content
+          : "https://storage.googleapis.com/snapbook_bucket/temp-image.webp", // Default image if no images in scrapbook
       date: new Date(item.updatedAt || item.createdAt).toLocaleDateString(),
-      collaborators: Array.isArray(item.collaborators) ? item.collaborators.length : 0,
-      imageCount: item.items ? item.items.filter(i => i.type === 'image').length : 0,
-      owner: item.owner
+      collaborators: Array.isArray(item.collaborators)
+        ? item.collaborators.length
+        : 0,
+      imageCount: item.items
+        ? item.items.filter((i) => i.type === "image").length
+        : 0,
+      owner: item.owner,
     };
 
     return (
@@ -132,7 +140,7 @@ const DashboardScreen = ({ navigation }) => {
           navigation.navigate("ScrapbookEditor", {
             scrapbookId: item._id,
             title: item.title,
-            isNew: false
+            isNew: false,
           })
         }
       />
@@ -146,7 +154,7 @@ const DashboardScreen = ({ navigation }) => {
         navigation.navigate("ScrapbookEditor", {
           scrapbookId: result._id,
           title: result.title,
-          isNew: false
+          isNew: false,
         });
       }
     } catch (error) {
@@ -175,6 +183,16 @@ const DashboardScreen = ({ navigation }) => {
     );
   };
 
+  const insets = useSafeAreaInsets();
+
+  const FooterElement = () => {
+    return (
+      <View style={{ paddingBottom: insets.bottom }}>
+        <Text style={styles.footerText}>Made wid ❤️ by Kichu</Text>
+      </View>
+    );
+  };
+
   return (
     <>
       <LinearGradient
@@ -194,22 +212,19 @@ const DashboardScreen = ({ navigation }) => {
       />
       <MemoizedStarySkyBackground />
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" />
-        
         <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.titleText}>SnapBook</Text>
               {userData && (
-                <Text style={styles.welcomeText}>Welcome, {userData.username}</Text>
+                <Text style={styles.welcomeText}>
+                  Welcome, {userData.username}
+                </Text>
               )}
             </View>
-            <TouchableOpacity
-              activeOpacity={0.6}
-              onPress={handleMoveToProfile}
-            >
+            <TouchableOpacity activeOpacity={0.6} onPress={handleMoveToProfile}>
               {userData && userData.avatar ? (
-                <Image 
+                <Image
                   source={{ uri: userData.avatar }}
                   style={styles.profileAvatar}
                   cachePolicy="memory-disk"
@@ -224,6 +239,10 @@ const DashboardScreen = ({ navigation }) => {
               )}
             </TouchableOpacity>
           </View>
+          <LinearGradient
+            colors={["#000000","#00000080","transparent"]}
+            style={styles.topGradient}
+          />
         </Animated.View>
 
         {renderLoader()}
@@ -237,7 +256,7 @@ const DashboardScreen = ({ navigation }) => {
             columnWrapperStyle={styles.columnWrapper}
             contentContainerStyle={[
               styles.listContent,
-              scrapbooks?.length === 0 && styles.emptyList
+              scrapbooks?.length === 0 && styles.emptyList,
             ]}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmptyComponent}
@@ -253,7 +272,15 @@ const DashboardScreen = ({ navigation }) => {
           />
         )}
 
-        <Animated.View style={[styles.floatingButton, addButtonAnimatedStyle]}>
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              bottom: insets.bottom + 20,
+            },
+            addButtonAnimatedStyle,
+          ]}
+        >
           <TouchableOpacity onPress={handleCreateScrapbook} activeOpacity={0.8}>
             <LinearGradient
               colors={["#5C6BC0", "#9575CD"]}
@@ -265,6 +292,7 @@ const DashboardScreen = ({ navigation }) => {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
+        <FooterElement />
       </View>
     </>
   );
@@ -273,15 +301,18 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: "relative",
   },
   headerContainer: {
     paddingHorizontal: 16,
-    marginBottom: 20,
+    position: "relative",
+    zIndex: 100,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    zIndex: 100,
   },
   welcomeText: {
     fontSize: 16,
@@ -307,7 +338,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 100,
-    paddingTop: 20,
+    paddingTop: 60,
   },
   emptyContainer: {
     flex: 1,
@@ -329,12 +360,12 @@ const styles = StyleSheet.create({
   floatingButton: {
     position: "absolute",
     right: 20,
-    bottom: 20,
     shadowColor: "#5C6BC0",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 8,
     elevation: 5,
+    zIndex: 100,
   },
   addButton: {
     width: 60,
@@ -361,17 +392,31 @@ const styles = StyleSheet.create({
   },
   loaderContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loaderText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     marginTop: 12,
     fontSize: 16,
   },
   emptyList: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
+  },
+  footerText: {
+    color: "#5C6BC0",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 20,
+  },
+  topGradient: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    right: 0,
+    height: 100,
+    width: width,
   },
 });
 

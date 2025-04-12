@@ -150,13 +150,13 @@ export const ScrapbookProvider = ({ children }) => {
 
   const leaveScrapbook = () => {
     if(socketRef.current && currentScrapbook) {
-      socketRef.current.emit('leave-scrapbook', currentScrapbook._id);
+      socketRef.current.emit('leave-scrapbook', currentScrapbook?._id);
     }
   }
   
   // Cleanup event handlers when leaving a scrapbook
   const cleanupScrapbookEvents = (scrapbookId) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !scrapbookId) return;
     
     socketRef.current.off('user-joined');
     socketRef.current.off('user-left');
@@ -166,7 +166,7 @@ export const ScrapbookProvider = ({ children }) => {
     socketRef.current.off('title-updated');
     socketRef.current.off('collaborator-added');
     socketRef.current.off('collaborator-removed');
-    
+    setActiveUsers([]);
     // Leave the room
     socketRef.current.emit('leave-scrapbook', scrapbookId);
   };
@@ -466,10 +466,10 @@ export const ScrapbookProvider = ({ children }) => {
   };
   
   // Clear current scrapbook (when navigating away)
-  const clearCurrentScrapbook = () => {
-    if (currentScrapbook) {
-      cleanupScrapbookEvents(currentScrapbook._id);
-    }
+  const clearCurrentScrapbook = (currentId) => {
+    if (!currentId) return;
+    cleanupScrapbookEvents(currentId);
+    
     setCurrentScrapbook(null);
     setCollaborators([]);
     setTimeline([]);
@@ -496,6 +496,7 @@ export const ScrapbookProvider = ({ children }) => {
       removeCollaborator,
       clearCurrentScrapbook,
       leaveScrapbook,
+      cleanupScrapbookEvents
     }}>
       {children}
     </ScrapbookContext.Provider>

@@ -278,7 +278,7 @@ const ProfileScreen = ({ navigation }) => {
       
       if (!result.canceled && result.assets && result.assets[0]) {
         const avatarUri = result.assets[0].uri;
-        
+        if(!avatarUri) return;
         // Animate avatar while updating
         avatarScale.value = withSequence(
           withTiming(0.9, { duration: 150 }),
