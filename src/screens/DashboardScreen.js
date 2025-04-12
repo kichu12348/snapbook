@@ -292,7 +292,7 @@ const DashboardScreen = ({ navigation }) => {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
-        <FooterElement />
+        {!loading && <FooterElement />}
       </View>
     </>
   );
