@@ -8,7 +8,6 @@ import {
   Dimensions,
   ActivityIndicator,
   TextInput,
-  StatusBar,
   Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -458,8 +457,6 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
       {/* Background elements */}
       <LinearGradient
         colors={['#000000', '#050008', '#0A000F', '#0F0015']}

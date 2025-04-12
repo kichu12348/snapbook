@@ -27,7 +27,7 @@ import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
 
-const StarySkyBackground = () => {
+const StarySkyBackground = React.memo(() => {
   const arrSize = 100;
   return (
     <View style={styles.starsContainer}>
@@ -53,7 +53,7 @@ const StarySkyBackground = () => {
       })}
     </View>
   );
-};
+});
 
 const DashboardScreen = ({ navigation }) => {
   // For floating animation of the header and add button
@@ -65,7 +65,7 @@ const DashboardScreen = ({ navigation }) => {
   const { scrapbooks, loading, fetchScrapbooks, createScrapbook } = useScrapbook();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const MemoizedStarySkyBackground = useMemo(() => {
+  const MemoizedStarySkyBackground = React.useCallback(() => {
     return <StarySkyBackground />;
   }, []);
 
@@ -192,10 +192,10 @@ const DashboardScreen = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-      {MemoizedStarySkyBackground}
+      <MemoizedStarySkyBackground />
       <View style={styles.container}>
         <StatusBar barStyle="light-content" />
-
+        
         <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
           <View style={styles.headerTop}>
             <View>

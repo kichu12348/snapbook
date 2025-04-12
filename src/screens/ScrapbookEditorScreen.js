@@ -27,7 +27,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { Image } from "expo-image";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
@@ -66,9 +66,134 @@ const StarySkyBackground = () => {
   );
 };
 
+//
+const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
+  return (
+    <Animated.View style={[styles.imageViewOverlay, animatedImage]}>
+      <BlurComponent blur={50} />
+        <LinearGradient
+          colors={["#000000", "transparent", "transparent", "transparent"]}
+          style={StyleSheet.absoluteFill}
+        />
+      <TouchableOpacity
+        style={StyleSheet.absoluteFill}
+        onPress={onClose}
+        activeOpacity={1}
+      >
+        
+        <View style={styles.imageHeader}>
+          <TouchableOpacity onPress={onClose} style={styles.overlayCloseButton}>
+            <Ionicons name="close" size={30} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.imageView}
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={300}
+        />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Render image item with the collage layout styles
+const RenderImageItem = React.memo(
+  ({
+    item,
+    handleLongPress,
+    clearLongPress,
+    initiateRemoveItem,
+    deleteButtonAnimatedStyle,
+    longPressedItem,
+    openViewer,
+  }) => {
+    const isLongPressed = item._id === longPressedItem;
+
+    return (
+      <Pressable
+        style={[
+          styles.itemContainer,
+          item.layoutStyle, // Apply dynamic layout style
+          isLongPressed && styles.itemLongPressed,
+        ]}
+        onLongPress={() => handleLongPress(item._id)}
+        delayLongPress={300}
+        onPress={() => {
+          clearLongPress();
+          openViewer(item.uri);
+        }}
+      >
+        <Image
+          source={{ uri: item.uri }}
+          style={styles.imageItem}
+          cachePolicy={"memory-disk"}
+          transition={1000}
+        />
+        {isLongPressed && (
+          <Animated.View
+            style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
+          >
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => initiateRemoveItem(item._id)}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+              <Ionicons name="trash" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </Pressable>
+    );
+  }
+);
+
+// Render text item with the collage layout styles
+const RenderTextItem = React.memo(
+  ({
+    item,
+    handleLongPress,
+    clearLongPress,
+    initiateRemoveItem,
+    deleteButtonAnimatedStyle,
+    longPressedItem,
+  }) => {
+    const isLongPressed = item._id === longPressedItem;
+
+    return (
+      <Pressable
+        style={[
+          styles.itemContainer,
+          styles.textItemContainer,
+          item.layoutStyle, // Apply dynamic layout style
+          isLongPressed && styles.itemLongPressed,
+        ]}
+        onLongPress={() => handleLongPress(item._id)}
+        delayLongPress={300}
+        onPress={clearLongPress}
+      >
+        <Text style={styles.textItem}>❝ {item.content} ❞</Text>
+        {isLongPressed && (
+          <Animated.View
+            style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
+          >
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => initiateRemoveItem(item._id)}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+              <Ionicons name="trash" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </Pressable>
+    );
+  }
+);
+
 // Timeline component
 const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
-
   return (
     <View style={styles.timelineItem}>
       <View style={styles.timelineUserContainer}>
@@ -96,19 +221,20 @@ const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
           </Text>
         </View>
 
-        {(item.details?.content &&
-          item.itemType === "text")&& (
-            <View style={styles.timelineDetail}>
-              <Text style={styles.timelineDetailText}>
-                ❝{item.details.content}❞
-              </Text>
-            </View>
-          )}
+        {item.details?.content && item.itemType === "text" && (
+          <View style={styles.timelineDetail}>
+            <Text style={styles.timelineDetailText}>
+              ❝{item.details.content}❞
+            </Text>
+          </View>
+        )}
 
         {item.itemType === "image" && (
           <Image
             source={{
-              uri: item.details?.content || "https://storage.googleapis.com/snapbook_bucket/image-removed.png",
+              uri:
+                item.details?.content ||
+                "https://storage.googleapis.com/snapbook_bucket/image-removed.png",
             }}
             style={styles.timelineThumbnail}
             contentFit="contain"
@@ -343,6 +469,23 @@ const CollaboratorOverlayComponent = ({
   );
 };
 
+const BlurComponent = React.memo(({ blur = 20 }) => {
+  return (
+    <BlurView
+      intensity={blur}
+      experimentalBlurMethod="dimezisBlurView"
+      blurReductionFactor={12}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        ...StyleSheet.absoluteFillObject,
+      }}
+      tint="dark"
+    />
+  );
+});
+
 const ScrapbookEditorScreen = ({ navigation, route }) => {
   // Get scrapbook ID from route params if editing existing scrapbook
   const { scrapbookId, isNew = false } = route.params || {};
@@ -356,7 +499,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     activeUsers,
     loading: contextLoading,
     fetchScrapbook,
-    fetchTimeline,
     createScrapbook,
     updateTitle,
     addItem,
@@ -364,7 +506,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     addCollaborator,
     removeCollaborator,
     clearCurrentScrapbook,
-    leaveScrapbook,
   } = useScrapbook();
 
   // State for scrapbook data
@@ -420,6 +561,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [imageUri, setImageUri] = useState(null);
 
   // API URL based on environment (match your ScrapbookContext)
 
@@ -607,7 +750,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         duration: 300,
         easing: Easing.in(Easing.ease),
       });
-      setTimeout(() => setShowTimeline(false), 300);
+      setShowTimeline(false);
     } else {
       setShowTimeline(true);
       timelineHeight.value = withTiming(height * 0.6, {
@@ -924,6 +1067,34 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     if (toolbarOpen) toggleToolbar();
   };
 
+  //handle image Viewer
+  const imageViewOpacity = useSharedValue(0);
+  const imageViewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: imageViewOpacity.value,
+      transform: [{ scale: imageViewOpacity.value }],
+    };
+  });
+  const openViewer = (uri) => {
+    setIsImageViewerOpen(true);
+    imageViewOpacity.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.ease),
+    });
+    setImageUri(uri);
+  };
+
+  const closeViewer = () => {
+    imageViewOpacity.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.in(Easing.ease),
+    });
+    setTimeout(() => {
+      setIsImageViewerOpen(false);
+      setImageUri(null);
+    }, 300);
+  };
+
   // Handle text submission
   const submitNewText = async () => {
     if (newText.trim()) {
@@ -1020,94 +1191,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   });
 
   //blur effect for the background
-  const BlurComponent = ({ blur = 20 }) => {
-    return (
-      <BlurView
-        intensity={blur}
-        experimentalBlurMethod="dimezisBlurView"
-        blurReductionFactor={12}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          ...StyleSheet.absoluteFillObject,
-        }}
-        tint="dark"
-      />
-    );
-  };
-
-  // Render image item with the collage layout styles
-  const renderImageItem = (item) => {
-    const isLongPressed = item._id === longPressedItem;
-
-    return (
-      <Pressable
-        style={[
-          styles.itemContainer,
-          item.layoutStyle, // Apply dynamic layout style
-          isLongPressed && styles.itemLongPressed,
-        ]}
-        onLongPress={() => handleLongPress(item._id)}
-        delayLongPress={300}
-        onPress={clearLongPress}
-      >
-        <Image
-          source={{ uri: item.uri }}
-          style={styles.imageItem}
-          cachePolicy={"memory-disk"}
-          transition={1000}
-        />
-        {isLongPressed && (
-          <Animated.View
-            style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
-          >
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => initiateRemoveItem(item._id)}
-            >
-              <Text style={styles.deleteButtonText}>Delete</Text>
-              <Ionicons name="trash" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-      </Pressable>
-    );
-  };
-
-  // Render text item with the collage layout styles
-  const renderTextItem = (item) => {
-    const isLongPressed = item._id === longPressedItem;
-
-    return (
-      <Pressable
-        style={[
-          styles.itemContainer,
-          styles.textItemContainer,
-          item.layoutStyle, // Apply dynamic layout style
-          isLongPressed && styles.itemLongPressed,
-        ]}
-        onLongPress={() => handleLongPress(item._id)}
-        delayLongPress={300}
-        onPress={clearLongPress}
-      >
-        <Text style={styles.textItem}>❝ {item.content} ❞</Text>
-        {isLongPressed && (
-          <Animated.View
-            style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
-          >
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => initiateRemoveItem(item._id)}
-            >
-              <Text style={styles.deleteButtonText}>Delete</Text>
-              <Ionicons name="trash" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-      </Pressable>
-    );
-  };
 
   // Render a row of the collage
   const renderCollageRow = (rowData) => {
@@ -1115,9 +1198,26 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       <View key={rowData._id} style={styles.collageRow}>
         {rowData.items.map((item) => (
           <React.Fragment key={item._id}>
-            {item.type === "image"
-              ? renderImageItem(item)
-              : renderTextItem(item)}
+            {item.type === "image" ? (
+              <RenderImageItem
+                item={item}
+                handleLongPress={handleLongPress}
+                clearLongPress={clearLongPress}
+                initiateRemoveItem={initiateRemoveItem}
+                deleteButtonAnimatedStyle={deleteButtonAnimatedStyle}
+                longPressedItem={longPressedItem}
+                openViewer={openViewer}
+              />
+            ) : (
+              <RenderTextItem
+                item={item}
+                handleLongPress={handleLongPress}
+                clearLongPress={clearLongPress}
+                initiateRemoveItem={initiateRemoveItem}
+                deleteButtonAnimatedStyle={deleteButtonAnimatedStyle}
+                longPressedItem={longPressedItem}
+              />
+            )}
           </React.Fragment>
         ))}
       </View>
@@ -1710,6 +1810,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           handleCollaboratorSubmit={submitCollaborator}
         />
       </Animated.View>
+      <ImageViewOverlay
+        imageUri={imageUri}
+        onClose={closeViewer}
+        animatedImage={imageViewAnimatedStyle}
+      />
     </>
   );
 };
@@ -2341,6 +2446,29 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 200,
     ...StyleSheet.absoluteFillObject,
+  },
+  imageViewOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 200,
+    ...StyleSheet.absoluteFillObject,
+  },
+  imageView: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    resizeMode: "contain",
+  },
+  imageHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  overlayCloseButton: {
+    alignSelf: "flex-end",
   },
 });
 
