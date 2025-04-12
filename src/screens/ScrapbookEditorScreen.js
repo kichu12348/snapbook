@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Modal
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -22,7 +22,7 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
-  Easing
+  Easing,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -32,19 +32,16 @@ import { Image } from "expo-image";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadImage } from "../../utils/upload";
-import axios from 'axios';
-import { endpoint } from "../../utils/constants/constants";
+import axios from "axios";
 
 const { width: SCREEN_WIDTH, height } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
 
 // Star background component
 const StarySkyBackground = () => {
-  const arrSize =100;
+  const arrSize = 100;
   return (
-    <View
-      style={styles.starsContainer}
-    >
+    <View style={styles.starsContainer}>
       {Array.from({ length: arrSize }).map((_, index) => {
         const x = Math.random() * SCREEN_WIDTH;
         const y = Math.random() * (Dimensions.get("window").height - 100) + 100;
@@ -70,21 +67,26 @@ const StarySkyBackground = () => {
 };
 
 // Timeline component
-const TimelineItem = ({ item,formatTimelineDate,getTimelineIcon }) => {
+const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
+
   return (
     <View style={styles.timelineItem}>
       <View style={styles.timelineUserContainer}>
-        <Image 
-          source={{ uri: item.user?.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg' }}
+        <Image
+          source={{
+            uri:
+              item.user?.avatar ||
+              "https://randomuser.me/api/portraits/lego/1.jpg",
+          }}
           style={styles.timelineAvatar}
           cachePolicy="memory-disk"
         />
       </View>
-      
+
       <View style={styles.timelineContent}>
         <View style={styles.timelineHeader}>
           <Text style={styles.timelineUser}>
-            {item.user?.username || 'Unknown User'}
+            {item.user?.username || "Unknown User"}
           </Text>
           <Text style={styles.timelineAction}>
             {item.action} {item.itemType}
@@ -93,47 +95,44 @@ const TimelineItem = ({ item,formatTimelineDate,getTimelineIcon }) => {
             {formatTimelineDate(item.timestamp)}
           </Text>
         </View>
-        
-        {item.details?.content && (item.type==="text" || item.details.content==="image") && (
-          <View style={styles.timelineDetail}>
-            <Text style={styles.timelineDetailText}>
-              ❝{item.details.content}❞
-            </Text>
-          </View>
-        )}
-        
-        {item.itemType === 'image' && (
-          <Image 
-            source={{ 
-              uri: item.details?.content || 'https://via.placeholder.com/100' 
+
+        {(item.details?.content &&
+          item.itemType === "text")&& (
+            <View style={styles.timelineDetail}>
+              <Text style={styles.timelineDetailText}>
+                ❝{item.details.content}❞
+              </Text>
+            </View>
+          )}
+
+        {item.itemType === "image" && (
+          <Image
+            source={{
+              uri: item.details?.content || "https://storage.googleapis.com/snapbook_bucket/image-removed.png",
             }}
-            style={styles.timelineThumbnail} 
+            style={styles.timelineThumbnail}
             contentFit="contain"
             width={100}
             height={100}
             cachePolicy="memory-disk"
-            transition={1000}
+            transition={300}
           />
         )}
       </View>
-      
+
       <View style={styles.timelineIconContainer}>
-        <Ionicons 
-          name={getTimelineIcon(item.itemType, item.action)} 
-          size={20} 
-          color="#9575CD" 
+        <Ionicons
+          name={getTimelineIcon(item.itemType, item.action)}
+          size={20}
+          color="#9575CD"
         />
       </View>
     </View>
   );
 };
 
-
- // Active Users Component
- const ActiveUsersComponent = ({
-  activeUsers,
-  userData
- }) => {
+// Active Users Component
+const ActiveUsersComponent = ({ activeUsers, userData }) => {
   if (!activeUsers || activeUsers.length === 0) return null;
   return (
     <View style={styles.activeUsersContainer}>
@@ -141,15 +140,28 @@ const TimelineItem = ({ item,formatTimelineDate,getTimelineIcon }) => {
         <Ionicons name="wifi" size={14} color="#FFCA80" /> Active Now
       </Text>
       <View style={styles.activeUsersList}>
-        {activeUsers.map((user, index) => user.userId!==userData._id&&(
-          <View key={user.userId} style={[styles.activeUserBadge, index > 0 && {marginLeft: -8}]}>
-            <Image
-              source={{ uri: user.avatar || 'https://randomuser.me/api/portraits/lego/2.jpg' }}
-              style={styles.activeUserAvatar}
-              cachePolicy="memory-disk"
-            />
-          </View>
-        ))}
+        {activeUsers.map(
+          (user, index) =>
+            user.userId !== userData._id && (
+              <View
+                key={user.userId}
+                style={[
+                  styles.activeUserBadge,
+                  index > 0 && { marginLeft: -8 },
+                ]}
+              >
+                <Image
+                  source={{
+                    uri:
+                      user.avatar ||
+                      "https://randomuser.me/api/portraits/lego/2.jpg",
+                  }}
+                  style={styles.activeUserAvatar}
+                  cachePolicy="memory-disk"
+                />
+              </View>
+            )
+        )}
       </View>
     </View>
   );
@@ -159,38 +171,51 @@ const CollaboratorsList = ({
   collaborators,
   currentScrapbook,
   userData,
-  handleRemoveCollaborator
+  handleRemoveCollaborator,
 }) => {
-  if (!currentScrapbook || !collaborators || collaborators.length === 0) return null;
-  
+  if (!currentScrapbook || !collaborators || collaborators.length === 0)
+    return null;
+
   return (
     <View style={styles.collaboratorsContainer}>
       <Text style={styles.collaboratorsTitle}>Collaborators</Text>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.collaboratorsScrollContent}
       >
-        {collaborators.map(collab =>
-        ( <View key={collab._id} style={styles.collaboratorItem}>
-            {collab.avatar ? <Image 
-              source={{ uri: collab.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg' }}
-              style={styles.collaboratorAvatar}
-              cachePolicy="memory-disk"
-            />:(
-              <Ionicons name="person-circle-outline" size={24} color="#5C6BC0" />
+        {collaborators.map((collab) => (
+          <View key={collab._id} style={styles.collaboratorItem}>
+            {collab.avatar ? (
+              <Image
+                source={{
+                  uri:
+                    collab.avatar ||
+                    "https://randomuser.me/api/portraits/lego/1.jpg",
+                }}
+                style={styles.collaboratorAvatar}
+                cachePolicy="memory-disk"
+              />
+            ) : (
+              <Ionicons
+                name="person-circle-outline"
+                size={24}
+                color="#5C6BC0"
+              />
             )}
             <Text style={styles.collaboratorName} numberOfLines={1}>
               {collab.username}
             </Text>
-            {currentScrapbook && userData && currentScrapbook.owner._id === userData._id && (
-              <TouchableOpacity 
-                style={styles.removeCollaboratorButton}
-                onPress={() => handleRemoveCollaborator(collab._id)}
-              >
-                <Ionicons name="close-circle" size={16} color="#FF5252" />
-              </TouchableOpacity>
-            )}
+            {currentScrapbook &&
+              userData &&
+              currentScrapbook.owner._id === userData._id && (
+                <TouchableOpacity
+                  style={styles.removeCollaboratorButton}
+                  onPress={() => handleRemoveCollaborator(collab._id)}
+                >
+                  <Ionicons name="close-circle" size={16} color="#FF5252" />
+                </TouchableOpacity>
+              )}
           </View>
         ))}
       </ScrollView>
@@ -198,56 +223,42 @@ const CollaboratorsList = ({
   );
 };
 
-
 const CollaboratorOverlayComponent = ({
-  isAddingCollaborator,
-  setIsAddingCollaborator,
   searchQuery,
   setSearchQuery,
   searchResults,
   setSearchResults,
-  isSearching,
   searchError,
   handleSearchChange,
   handleSelectCollaborator,
+  closeCollaboratorModal,
 }) => {
-  if (!isAddingCollaborator) return null;
+  //if (!isAddingCollaborator) return null;
 
   return (
-    <Modal
-      visible={isAddingCollaborator}
-      animationType="fade"
-      transparent
-      statusBarTranslucent
-      onRequestClose={() => {
-        setIsAddingCollaborator(false);
-        setSearchQuery('');
-        setSearchResults([]);
-      }}
-    >
+    <View style={styles.collaboratorOverlay}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        
         <LinearGradient
-        style={StyleSheet.absoluteFill}
-        colors={["#000000",
+          style={StyleSheet.absoluteFill}
+          colors={[
+            "#000000",
             "#000000",
             "#050011",
             "#0A0022",
             "#0F0033",
-            "#140044",]}
+            "#140044",
+          ]}
         />
-        <View 
-        style={styles.collaboratorModal}
-        >
+        <View style={styles.collaboratorModal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Collaborator</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => {
-                setIsAddingCollaborator(false);
-                setSearchQuery('');
+                closeCollaboratorModal();
+                setSearchQuery("");
                 setSearchResults([]);
               }}
               style={styles.closeButton}
@@ -256,10 +267,15 @@ const CollaboratorOverlayComponent = ({
               <Ionicons name="close" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.searchContainer}>
             <View style={styles.searchInputContainer}>
-              <Ionicons name="search" size={20} color="#9575CD" style={styles.searchIcon} />
+              <Ionicons
+                name="search"
+                size={20}
+                color="#9575CD"
+                style={styles.searchIcon}
+              />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search users by name or email..."
@@ -272,74 +288,69 @@ const CollaboratorOverlayComponent = ({
                 returnKeyType="search"
                 clearButtonMode="while-editing"
               />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity 
-                  onPress={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                  }}
-                  style={styles.clearButton}
-                >
-                  <Ionicons name="close-circle" size={18} color="#9575CD" />
-                </TouchableOpacity>
-              )}
-            </View>      
+            </View>
             {searchError && (
               <Text style={styles.searchErrorText}>{searchError}</Text>
             )}
-            
-            {!isSearching && searchQuery.length > 0 && searchResults.length === 0 && (
-              <Text style={styles.noResultsText}>
-                {searchQuery.length < 2 
-                  ? "Type at least 2 characters to search" 
-                  : "No users found matching your search"}
-              </Text>
-            )}
+
+            {/* {!isSearching &&
+              searchQuery.length > 0 &&
+              searchResults.length === 0 && (
+                <Text style={styles.noResultsText}>
+                  {searchQuery.length < 2
+                    ? "Type at least 2 characters to search"
+                    : "No users found matching your search"}
+                </Text>
+              )} */}
           </View>
-          
-          <ScrollView 
+
+          <ScrollView
             style={styles.resultsContainer}
             contentContainerStyle={styles.resultsContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="none"
           >
-            {searchResults.map(user => (
-              <TouchableOpacity 
-                key={user._id} 
+            {searchResults.map((user) => (
+              <TouchableOpacity
+                key={user._id}
                 style={styles.userResultItem}
                 onPress={() => handleSelectCollaborator(user)}
               >
                 <View style={styles.userAvatarContainer}>
-                  <Image 
-                    source={{ uri: user.avatar || 'https://randomuser.me/api/portraits/lego/0.jpg' }} 
+                  <Image
+                    source={{
+                      uri:
+                        user.avatar ||
+                        "https://randomuser.me/api/portraits/lego/0.jpg",
+                    }}
                     style={styles.userAvatar}
                     cachePolicy="memory-disk"
                   />
                 </View>
-                
+
                 <View style={styles.userInfo}>
                   <Text style={styles.userUsername}>{user.username}</Text>
                   <Text style={styles.userEmail}>{user.email}</Text>
                 </View>
-                
+
                 <Ionicons name="add-circle" size={24} color="#5C6BC0" />
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 };
 
 const ScrapbookEditorScreen = ({ navigation, route }) => {
   // Get scrapbook ID from route params if editing existing scrapbook
   const { scrapbookId, isNew = false } = route.params || {};
-  
+
   // Context hooks
-  const { userData,userToken } = useAuth();
-  const { 
-    currentScrapbook, 
+  const { userData, userToken } = useAuth();
+  const {
+    currentScrapbook,
     timeline,
     collaborators,
     activeUsers,
@@ -355,7 +366,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     clearCurrentScrapbook,
     leaveScrapbook,
   } = useScrapbook();
-
 
   // State for scrapbook data
   const [title, setTitle] = useState(route.params?.title || "New Scrapbook");
@@ -406,70 +416,72 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const timelineOpacity = useSharedValue(0);
 
   // New states for collaborator search
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
-  
+
   // API URL based on environment (match your ScrapbookContext)
 
   // Create debounced search function
   const debouncedSearch = useCallback(
     async (query) => {
-
       if (query.length < 2) {
         setSearchResults([]);
         setSearchError(null);
         return;
       }
-      
 
       setIsSearching(true);
       setSearchError(null);
-      
+
       try {
         const response = await axios.get(`/api/auth/search?query=${query}`, {
-          headers: { 'x-auth-token': userToken }
+          headers: { "x-auth-token": userToken },
         });
-        
+
         setSearchResults(response.data);
       } catch (error) {
-        console.log('User search error:', error.message);
-        setSearchError('Failed to search users. Please try again.');
+        console.log("User search error:", error.message);
+        setSearchError("Failed to search users. Please try again.");
         setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
-    },[searchQuery,userToken]
+    },
+    [searchQuery, userToken]
   );
-  
+
   // Handle search input change
   const handleSearchChange = (text) => {
     setSearchQuery(text);
     debouncedSearch(text);
   };
-  
+
   // Handle collaborator selection
   const handleSelectCollaborator = async (user) => {
     try {
       const result = await addCollaborator(scrapbookId, user.username);
-      
+
       if (result) {
         setNotificationOverlay({
           visible: true,
           title: "Collaborator Added",
           message: `${user.username} can now edit this scrapbook with you.`,
-          onDismiss: null
+          onDismiss: null,
         });
       }
-      
+
       // Clear search and close modal
-      setSearchQuery('');
+      setSearchQuery("");
       setSearchResults([]);
       setIsAddingCollaborator(false);
     } catch (error) {
       console.error("Error adding collaborator:", error);
-      Alert.alert("Error", "Failed to add collaborator. " + (error.message || "Please try again."));
+      Alert.alert(
+        "Error",
+        "Failed to add collaborator. " + (error.message || "Please try again.")
+      );
     }
   };
 
@@ -484,26 +496,27 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (!isNew && scrapbookId) {
       setLoading(true);
-      
+
       fetchScrapbook(scrapbookId)
-        .then(scrapbook => {
+        .then((scrapbook) => {
           if (scrapbook) {
             setTitle(scrapbook.title);
-            
+
             // Convert backend items to local format
-            const convertedItems = scrapbook.items?.map(item => ({
-              _id: item._id,
-              type: item.type,
-              content: item.content,
-              uri: item.type === 'image' ? item.content : null,
-              height: getRandomHeight(),
-              createdBy: item.createdBy
-            })) || [];
-            
+            const convertedItems =
+              scrapbook.items?.map((item) => ({
+                _id: item._id,
+                type: item.type,
+                content: item.content,
+                uri: item.type === "image" ? item.content : null,
+                height: getRandomHeight(),
+                createdBy: item.createdBy,
+              })) || [];
+
             setItems(convertedItems);
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Error fetching scrapbook:", error);
           Alert.alert("Error", "Failed to load scrapbook. Please try again.");
         })
@@ -532,15 +545,15 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (currentScrapbook && currentScrapbook.items?.length > 0) {
       // Convert backend items to local format
-      const convertedItems = currentScrapbook.items.map(item => ({
+      const convertedItems = currentScrapbook.items.map((item) => ({
         _id: item._id,
         type: item.type,
         content: item.content,
-        uri: item.type === 'image' ? item.content : null,
+        uri: item.type === "image" ? item.content : null,
         height: getRandomHeight(),
-        createdBy: item.createdBy
+        createdBy: item.createdBy,
       }));
-      
+
       setItems(convertedItems);
     }
   }, [currentScrapbook?.items]);
@@ -584,31 +597,31 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   // Toggle timeline view
-  const toggleTimeline =() => {
+  const toggleTimeline = () => {
     if (showTimeline) {
-      timelineHeight.value = withTiming(0,{
+      timelineHeight.value = withTiming(0, {
         duration: 300,
-        easing: Easing.in(Easing.ease)
+        easing: Easing.in(Easing.ease),
       });
-      timelineOpacity.value = withTiming(0,{
+      timelineOpacity.value = withTiming(0, {
         duration: 300,
-        easing: Easing.in(Easing.ease)
+        easing: Easing.in(Easing.ease),
       });
       setTimeout(() => setShowTimeline(false), 300);
     } else {
       setShowTimeline(true);
-      timelineHeight.value = withTiming(height * 0.6,{
+      timelineHeight.value = withTiming(height * 0.6, {
         duration: 300,
-        easing: Easing.out(Easing.ease)
+        easing: Easing.out(Easing.ease),
       });
-      timelineOpacity.value = withTiming(1,{
+      timelineOpacity.value = withTiming(1, {
         duration: 300,
-        easing: Easing.out(Easing.ease)
+        easing: Easing.out(Easing.ease),
       });
     }
   };
 
-  const MemoizedStarySkyBackground = useMemo(() => <StarySkyBackground/>, []);
+  const MemoizedStarySkyBackground = useMemo(() => <StarySkyBackground />, []);
 
   // Helper for organizing items into collage layout groups
   const generateCollageLayout = (itemsList) => {
@@ -877,11 +890,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           const newItem = {
             type: "image",
             content: imageUri,
-            position: { x: 0, y: 0 }
+            position: { x: 0, y: 0 },
           };
-          
+
           const result = await addItem(scrapbookId, newItem);
-          
+
           if (result) {
             // Add to local state (context will update currentScrapbook)
             const localItem = {
@@ -890,7 +903,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
               uri: imageUri,
               content: imageUri,
               height: getRandomHeight(),
-              createdBy: userData?._id
+              createdBy: userData?._id,
             };
             setItems((prev) => [...prev, localItem]);
           }
@@ -922,18 +935,17 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           height: getRandomHeight(),
         };
         setItems((prev) => [...prev, newTextItem]);
-      } else 
-      {
+      } else {
         // For existing scrapbooks, send to server
         try {
           const newTextItem = {
             type: "text",
             content: newText.trim(),
-            position: { x: 0, y: 0 }
+            position: { x: 0, y: 0 },
           };
-          
+
           const result = await addItem(scrapbookId, newTextItem);
-          
+
           if (result) {
             // Add to local state (context will update currentScrapbook)
             const localItem = {
@@ -941,7 +953,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
               type: "text",
               content: newText.trim(),
               height: getRandomHeight(),
-              createdBy: userData?._id
+              createdBy: userData?._id,
             };
             setItems((prev) => [...prev, localItem]);
           }
@@ -962,7 +974,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       title: "Remove Item",
       message: "Are you sure you want to remove this item from your scrapbook?",
       confirmAction: async () => {
-        if (isNew || id.toString().startsWith('temp-')) {
+        if (isNew || id.toString().startsWith("temp-")) {
           // For new scrapbooks or temporary items, just update local state
           setItems((prev) => prev.filter((item) => item._id !== id));
         } else {
@@ -1008,9 +1020,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   });
 
   //blur effect for the background
-  const BlurComponent = ({
-    blur=20,
-  }) => {
+  const BlurComponent = ({ blur = 20 }) => {
     return (
       <BlurView
         intensity={blur}
@@ -1026,7 +1036,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       />
     );
   };
-
 
   // Render image item with the collage layout styles
   const renderImageItem = (item) => {
@@ -1121,23 +1130,23 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       // Create new scrapbook
       try {
         const newScrapbook = await createScrapbook(title);
-        
+
         if (newScrapbook && items.length > 0) {
           // Add all items to the new scrapbook
           for (const item of items) {
             await addItem(newScrapbook._id, {
               type: item.type,
-              content: item.type === 'image' ? item.uri : item.content,
-              position: { x: 0, y: 0 }
+              content: item.type === "image" ? item.uri : item.content,
+              position: { x: 0, y: 0 },
             });
           }
         }
-        
+
         setNotificationOverlay({
           visible: true,
           title: "Scrapbook Created",
           message: "Your creative masterpiece has been saved successfully!",
-          onDismiss: () => navigation.goBack()
+          onDismiss: () => navigation.goBack(),
         });
       } catch (error) {
         console.error("Error creating scrapbook:", error);
@@ -1152,12 +1161,12 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           console.error("Error updating title:", error);
         }
       }
-      
+
       setNotificationOverlay({
         visible: true,
         title: "Scrapbook Saved",
         message: "Your changes have been saved successfully!",
-        onDismiss: () => navigation.goBack()
+        onDismiss: () => navigation.goBack(),
       });
     }
   };
@@ -1166,19 +1175,19 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const formatTimelineDate = (date) => {
     const now = new Date();
     const diff = (now - date) / 1000 / 60; // diff in minutes
-    
+
     if (diff < 1) return "Just now";
     if (diff < 60) return `${Math.floor(diff)} min ago`;
     if (diff < 1440) return `${Math.floor(diff / 60)} hours ago`;
     if (diff < 10080) return format(date, "EEE 'at' h:mm a"); // Within 7 days
-    
+
     return format(date, "MMM d, yyyy");
   };
 
   // Get appropriate icon for timeline item
   const getTimelineIcon = (itemType, action) => {
     if (action === "removed") return "trash-outline";
-    
+
     switch (itemType) {
       case "image":
         return "image-outline";
@@ -1192,7 +1201,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   // Timeline Component (use real timeline data)
- 
 
   // Handle title update
   const handleTitleUpdate = async () => {
@@ -1208,32 +1216,70 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     setIsEditingTitle(false);
   };
 
+  const collabModalTranlateY = useSharedValue(height);
+  const collabModalOpacity = useSharedValue(0);
+
+  const collabModalAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: collabModalOpacity.value,
+      transform: [{ translateY: collabModalTranlateY.value }],
+    };
+  });
+
   // Add collaborator handler
   const handleAddCollaborator = () => {
     setIsAddingCollaborator(true);
+    collabModalTranlateY.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.out(Easing.ease),
+    });
+    collabModalOpacity.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.ease),
+    });
+    toggleToolbar();
+  };
+
+  const closeCollaboratorModal = () => {
+    setIsAddingCollaborator(false);
+    collabModalTranlateY.value = withTiming(height, {
+      duration: 300,
+      easing: Easing.in(Easing.ease),
+    });
+    collabModalOpacity.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.in(Easing.ease),
+    });
   };
 
   // Submit collaborator handler
   const submitCollaborator = async () => {
     if (collaboratorUsername.trim() && !isNew && scrapbookId) {
       try {
-        const result = await addCollaborator(scrapbookId, collaboratorUsername.trim());
-        
+        const result = await addCollaborator(
+          scrapbookId,
+          collaboratorUsername.trim()
+        );
+
         if (result) {
           setNotificationOverlay({
             visible: true,
             title: "Collaborator Added",
             message: `${collaboratorUsername} can now edit this scrapbook with you.`,
-            onDismiss: null
+            onDismiss: null,
           });
         }
       } catch (error) {
         console.error("Error adding collaborator:", error);
-        Alert.alert("Error", "Failed to add collaborator. " + (error.message || "Please try again."));
+        Alert.alert(
+          "Error",
+          "Failed to add collaborator. " +
+            (error.message || "Please try again.")
+        );
       }
     }
-    setCollaboratorUsername('');
-    setIsAddingCollaborator(false);
+    setCollaboratorUsername("");
+    closeCollaboratorModal();
   };
 
   // Remove collaborator handler
@@ -1241,17 +1287,21 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     setConfirmOverlay({
       visible: true,
       title: "Remove Collaborator",
-      message: "Are you sure you want to remove this collaborator from your scrapbook?",
+      message:
+        "Are you sure you want to remove this collaborator from your scrapbook?",
       confirmAction: async () => {
         try {
           await removeCollaborator(scrapbookId, collaboratorId);
         } catch (error) {
           console.error("Error removing collaborator:", error);
-          Alert.alert("Error", "Failed to remove collaborator. Please try again.");
+          Alert.alert(
+            "Error",
+            "Failed to remove collaborator. Please try again."
+          );
         }
         setConfirmOverlay((prev) => ({ ...prev, visible: false }));
       },
-      itemId: collaboratorId
+      itemId: collaboratorId,
     });
   };
 
@@ -1342,12 +1392,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-   const timeOut= setTimeout(()=>{
+    const timeOut = setTimeout(() => {
       setStart(true);
-    },500);
+    }, 500);
     return () => clearTimeout(timeOut);
   }, []);
-
 
   if (!start) {
     return (
@@ -1398,9 +1447,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         }}
       >
         {/* Title edit area */}
-        <View
-          style={styles.titleContainer}
-        >
+        <View style={styles.titleContainer}>
           {isEditingTitle ? (
             <View style={styles.titleEditContainer}>
               <TextInput
@@ -1427,8 +1474,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           )}
           {/* Timeline toggle button */}
-          <TouchableOpacity 
-            style={styles.timelineButton} 
+          <TouchableOpacity
+            style={styles.timelineButton}
             onPress={toggleTimeline}
           >
             <Ionicons
@@ -1446,7 +1493,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
           >
-            <BlurView intensity={20} style={styles.blurBackground} tint="dark" />
+            <BlurView
+              intensity={20}
+              style={styles.blurBackground}
+              tint="dark"
+            />
             <View style={styles.textInputContainer}>
               <TextInput
                 style={styles.textInput}
@@ -1493,40 +1544,42 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         )}
 
         {/* Timeline Overlay - use real timeline data */}
-       
-          <Animated.View style={[styles.timelineContainer, timelineAnimatedStyle]}>
-            <BlurComponent 
-            blur={30}
-            />
-            <View style={[styles.timelineHeaderContainer]}>
-              <Text style={styles.timelineTitle}>Timeline</Text>
-              <TouchableOpacity style={styles.timelineCloseButton} onPress={toggleTimeline}>
-                <Ionicons name="close" size={22} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView 
-              style={styles.timelineList}
-              contentContainerStyle={styles.timelineContentContainer}
-              showsVerticalScrollIndicator={false}
+
+        <Animated.View
+          style={[styles.timelineContainer, timelineAnimatedStyle]}
+        >
+          <BlurComponent blur={30} />
+          <View style={[styles.timelineHeaderContainer]}>
+            <Text style={styles.timelineTitle}>Timeline</Text>
+            <TouchableOpacity
+              style={styles.timelineCloseButton}
+              onPress={toggleTimeline}
             >
-              {timeline && timeline.length > 0 ? (
-                timeline.map(item => (
-                  <TimelineItem 
-                  key={item._id} 
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={styles.timelineList}
+            contentContainerStyle={styles.timelineContentContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {timeline && timeline.length > 0 ? (
+              timeline.map((item) => (
+                <TimelineItem
+                  key={item._id}
                   item={item}
                   formatTimelineDate={formatTimelineDate}
                   getTimelineIcon={getTimelineIcon}
                   handleLongPress={handleLongPress}
                   clearLongPress={clearLongPress}
-                  />
-                ))
-              ) : (
-                <Text style={styles.emptyTimelineText}>No activity yet</Text>
-              )}
-            </ScrollView>
-          </Animated.View>
-        
+                />
+              ))
+            ) : (
+              <Text style={styles.emptyTimelineText}>No activity yet</Text>
+            )}
+          </ScrollView>
+        </Animated.View>
 
         {/* Main content - Collaborators, Active Users, and Scrapbook Items */}
         <Animated.ScrollView
@@ -1537,20 +1590,24 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           ref={scrollViewRef}
         >
           {/* Show collaborators list for existing scrapbooks */}
-          {!isNew && <CollaboratorsList 
-            collaborators={collaborators}
-            currentScrapbook={currentScrapbook}
-            handleRemoveCollaborator={handleRemoveCollaborator}
-            handleAddCollaborator={handleAddCollaborator}
-            userData={userData}
-          />}
-          
+          {!isNew && (
+            <CollaboratorsList
+              collaborators={collaborators}
+              currentScrapbook={currentScrapbook}
+              handleRemoveCollaborator={handleRemoveCollaborator}
+              handleAddCollaborator={handleAddCollaborator}
+              userData={userData}
+            />
+          )}
+
           {/* Show active users when others are viewing */}
-          {!isNew && <ActiveUsersComponent
-            activeUsers={activeUsers}
-            userData={userData}
-           />}
-          
+          {!isNew && (
+            <ActiveUsersComponent
+              activeUsers={activeUsers}
+              userData={userData}
+            />
+          )}
+
           <Animated.View
             style={[styles.masonryContent, animatedPaddingBottomStyle]}
           >
@@ -1568,10 +1625,15 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         </Animated.ScrollView>
 
         {/* Bottom toolbar with collaborator button for existing scrapbooks */}
-        <View style={[styles.toolbarContainer, { paddingBottom: insets.bottom }]}>
+        <View
+          style={[styles.toolbarContainer, { paddingBottom: insets.bottom }]}
+        >
           <BlurComponent />
-          
-          <TouchableOpacity style={styles.toolbarToggle} onPress={toggleToolbar}>
+
+          <TouchableOpacity
+            style={styles.toolbarToggle}
+            onPress={toggleToolbar}
+          >
             <Ionicons
               name={toolbarOpen ? "chevron-down" : "add"}
               size={24}
@@ -1586,41 +1648,41 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
               contentContainerStyle={styles.toolbarScrollContent}
               style={styles.toolbarScrollView}
             >
-            <TouchableOpacity
-              style={styles.toolbarButton}
-              onPress={addImageFromGallery}
-            >
-              <Ionicons name="image" size={28} color="#FFFFFF" />
-              <Text style={styles.toolbarButtonText}>Add Image</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.toolbarButton}
-              onPress={handleAddText}
-            >
-              <Ionicons name="text" size={28} color="#FFFFFF" />
-              <Text style={styles.toolbarButtonText}>Add Text</Text>
-            </TouchableOpacity>
-
-            {!isNew && (
               <TouchableOpacity
                 style={styles.toolbarButton}
-                onPress={handleAddCollaborator}
+                onPress={addImageFromGallery}
               >
-                <Ionicons name="people" size={28} color="#FFFFFF" />
-                <Text style={styles.toolbarButtonText}>Add Collaborator</Text>
+                <Ionicons name="image" size={28} color="#FFFFFF" />
+                <Text style={styles.toolbarButtonText}>Add Image</Text>
               </TouchableOpacity>
-            )}
 
-            <TouchableOpacity
-              style={styles.toolbarButton}
-              onPress={saveScrapbook}
-            >
-              <Ionicons name="save" size={28} color="#FFCA80" />
-              <Text style={[styles.toolbarButtonText, { color: "#FFCA80" }]}>
-                Save
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={handleAddText}
+              >
+                <Ionicons name="text" size={28} color="#FFFFFF" />
+                <Text style={styles.toolbarButtonText}>Add Text</Text>
+              </TouchableOpacity>
+
+              {!isNew && (
+                <TouchableOpacity
+                  style={styles.toolbarButton}
+                  onPress={handleAddCollaborator}
+                >
+                  <Ionicons name="people" size={28} color="#FFFFFF" />
+                  <Text style={styles.toolbarButtonText}>Add Collaborator</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={saveScrapbook}
+              >
+                <Ionicons name="save" size={28} color="#FFCA80" />
+                <Text style={[styles.toolbarButtonText, { color: "#FFCA80" }]}>
+                  Save
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
           </Animated.View>
         </View>
@@ -1629,9 +1691,14 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         <PermissionOverlayComponent />
         <ConfirmOverlayComponent />
         <NotificationOverlayComponent />
+      </Animated.View>
+      <Animated.View
+        style={[styles.collaboratorOverlay, collabModalAnimatedStyle]}
+      >
         <CollaboratorOverlayComponent
           isAddingCollaborator={isAddingCollaborator}
           setIsAddingCollaborator={setIsAddingCollaborator}
+          closeCollaboratorModal={closeCollaboratorModal}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           searchResults={searchResults}
@@ -1641,8 +1708,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           handleSearchChange={handleSearchChange}
           handleSelectCollaborator={handleSelectCollaborator}
           handleCollaboratorSubmit={submitCollaborator}
-
-         />
+        />
       </Animated.View>
     </>
   );
@@ -1962,7 +2028,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     padding: 10,
   },
-  
+
   timelineHeaderContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1970,25 +2036,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  
+
   timelineTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  
+
   timelineCloseButton: {
     padding: 4,
   },
-  
+
   timelineList: {
     flex: 1,
   },
-  
+
   timelineContentContainer: {
     paddingVertical: 10,
   },
-  
+
   timelineItem: {
     flexDirection: "row",
     paddingVertical: 12,
@@ -1996,11 +2062,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
-  
+
   timelineUserContainer: {
     marginRight: 12,
   },
-  
+
   timelineAvatar: {
     width: 36,
     height: 36,
@@ -2008,55 +2074,55 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#2A1E5C",
   },
-  
+
   timelineContent: {
     flex: 1,
   },
-  
+
   timelineHeader: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
     marginBottom: 4,
   },
-  
+
   timelineUser: {
     fontSize: 14,
     fontWeight: "600",
     color: "#FFCA80",
     marginRight: 6,
   },
-  
+
   timelineAction: {
     fontSize: 14,
     color: "#FFFFFF",
     marginRight: 6,
   },
-  
+
   timelineTimestamp: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.6)",
   },
-  
+
   timelineDetail: {
     backgroundColor: "rgba(42, 30, 92, 0.5)",
     borderRadius: 8,
     padding: 10,
     marginTop: 6,
   },
-  
+
   timelineDetailText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontStyle: "italic",
   },
-  
+
   timelineThumbnail: {
     height: 80,
     borderRadius: 8,
     marginTop: 6,
   },
-  
+
   timelineIconContainer: {
     marginLeft: 12,
     alignItems: "center",
@@ -2115,7 +2181,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     padding: 2,
   },
-  
+
   activeUsersContainer: {
     paddingHorizontal: 16,
     flexDirection: "row",
@@ -2160,23 +2226,22 @@ const styles = StyleSheet.create({
   },
   collaboratorModal: {
     flex: 1,
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    marginTop: 50, // Leave space at the top for status bar
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   closeButton: {
     padding: 8,
@@ -2186,13 +2251,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(42, 30, 92, 0.5)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(42, 30, 92, 0.5)",
     borderRadius: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: 'rgba(92, 107, 192, 0.3)',
+    borderColor: "rgba(92, 107, 192, 0.3)",
   },
   searchIcon: {
     marginRight: 10,
@@ -2200,7 +2265,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 50,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
   },
   clearButton: {
@@ -2208,18 +2273,18 @@ const styles = StyleSheet.create({
   },
   searchSpinner: {
     marginTop: 16,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   searchErrorText: {
-    color: '#FF5252',
+    color: "#FF5252",
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   noResultsText: {
-    color: '#9575CD',
+    color: "#9575CD",
     marginTop: 16,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
   },
   resultsContainer: {
     flex: 1,
@@ -2230,11 +2295,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   userResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   userAvatarContainer: {
     marginRight: 16,
@@ -2244,31 +2309,38 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#2A1E5C',
+    borderColor: "#2A1E5C",
   },
   userInfo: {
     flex: 1,
   },
   userUsername: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#9575CD',
+    color: "#9575CD",
   },
   modalFooter: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
   },
   modalFooterText: {
     fontSize: 14,
-    color: '#9575CD',
-    textAlign: 'center',
+    color: "#9575CD",
+    textAlign: "center",
+  },
+  collaboratorOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 200,
+    ...StyleSheet.absoluteFillObject,
   },
 });
 

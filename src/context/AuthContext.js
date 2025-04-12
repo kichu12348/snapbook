@@ -99,7 +99,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/login', {
+      // const response = await axios.post('/api/auth/login', {
+      //   email,
+      //   password
+      // });
+      const response = await api.post('/api/auth/login', {
         email,
         password
       });
@@ -115,6 +119,7 @@ export const AuthProvider = ({ children }) => {
       
       return response.data;
     } catch (error) {
+      console.log("Sign in error:", error.message);
       handleApiError(error);
       throw error;
     } finally {
@@ -128,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/api/auth/register', {
         email,
         password,
         username,
@@ -180,11 +185,13 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.put('/api/users/me', userData, {
+      const response = await api.put('/api/users/me', userData, {
         headers: {
           'x-auth-token': userToken
         }
       });
+
+      
       
       // Update user data
       setUserData(response.data.user);

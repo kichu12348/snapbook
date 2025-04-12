@@ -290,6 +290,7 @@ const ProfileScreen = ({ navigation }) => {
         await updateProfile({ avatar: uri });
       }
     } catch (error) {
+      console.log(error.message)
       showError('Failed to update profile picture. Please try again.');
     }
   };

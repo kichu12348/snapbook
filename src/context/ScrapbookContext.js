@@ -83,6 +83,7 @@ export const ScrapbookProvider = ({ children }) => {
         ...prev,
         items: [...prev.items, item]
       } : prev);
+      setTimeline(prev => [item.timeline, ...prev]);
     });
     
     socketRef.current.on('item-updated', (updatedItem) => {
@@ -97,7 +98,7 @@ export const ScrapbookProvider = ({ children }) => {
       });
     });
     
-    socketRef.current.on('item-removed', ({ itemId }) => {
+    socketRef.current.on('item-removed', ({ itemId,timeline }) => {
       setCurrentScrapbook(prev => {
         if (!prev) return prev;
         return {
@@ -105,6 +106,8 @@ export const ScrapbookProvider = ({ children }) => {
           items: prev.items.filter(item => item._id !== itemId)
         };
       });
+      //add to timeline
+      setTimeline(prev => [timeline, ...prev]);
     });
 
 
@@ -115,7 +118,7 @@ export const ScrapbookProvider = ({ children }) => {
     });
     
     // Collaborator events
-    socketRef.current.on('collaborator-added', ({ collaborator }) => {
+    socketRef.current.on('collaborator-added', ({ collaborator,timeline }) => {
       setCollaborators(prev => [...prev, collaborator]);
       setCurrentScrapbook(prev => {
         if (!prev) return prev;
@@ -124,9 +127,11 @@ export const ScrapbookProvider = ({ children }) => {
           collaborators: [...prev.collaborators, collaborator]
         };
       });
+      //add to timeline
+      setTimeline(prev => [timeline, ...prev]);
     });
     
-    socketRef.current.on('collaborator-removed', ({ collaboratorId }) => {
+    socketRef.current.on('collaborator-removed', ({ collaboratorId,timeline}) => {
       setCollaborators(prev => prev.filter(c => c._id !== collaboratorId));
       setCurrentScrapbook(prev => {
         if (!prev) return prev;
@@ -135,6 +140,8 @@ export const ScrapbookProvider = ({ children }) => {
           collaborators: prev.collaborators.filter(c => c._id !== collaboratorId)
         };
       });
+      //add to timeline
+      setTimeline(prev => [timeline, ...prev]);
     });
     
     // Join this scrapbook room
@@ -312,7 +319,8 @@ export const ScrapbookProvider = ({ children }) => {
         { headers: { 'x-auth-token': userToken } }
       );
       
-      const newItem = response.data;
+      const {newItem,timeline} = response.data;
+      
       
       // Add to current scrapbook
       setCurrentScrapbook(prev => {
@@ -322,6 +330,8 @@ export const ScrapbookProvider = ({ children }) => {
           items: [...prev.items, newItem]
         };
       });
+      // Add to timeline
+      setTimeline(prev => [timeline, ...prev]);
       
       // // Emit socket event
       // if (socketRef.current) {
@@ -343,11 +353,11 @@ export const ScrapbookProvider = ({ children }) => {
     setError(null);
     
     try {
-      await axios.delete(
+      const res=await axios.delete(
         `/api/scrapbooks/${scrapbookId}/items/${itemId}`,
         { headers: { 'x-auth-token': userToken } }
       );
-      
+      const {timeline} = res.data;
       // Remove from current scrapbook
       setCurrentScrapbook(prev => {
         if (!prev) return prev;
@@ -356,6 +366,9 @@ export const ScrapbookProvider = ({ children }) => {
           items: prev.items.filter(item => item._id !== itemId)
         };
       });
+
+      //add to timeline
+      setTimeline(prev => [timeline, ...prev]);
       
       // Emit socket event
       if (socketRef.current) {
@@ -383,7 +396,7 @@ export const ScrapbookProvider = ({ children }) => {
         { headers: { 'x-auth-token': userToken } }
       );
       
-      const { collaborator } = response.data;
+      const { collaborator,timeline } = response.data;
       
       // Add to collaborators list
       setCollaborators(prev => [...prev, collaborator]);
@@ -396,7 +409,10 @@ export const ScrapbookProvider = ({ children }) => {
           collaborators: [...prev.collaborators, collaborator]
         };
       });
-      
+
+      // Add to timeline
+      setTimeline(prev => [timeline, ...prev]);
+
       // Emit socket event
       if (socketRef.current) {
         socketRef.current.emit('collaborator-added', { scrapbookId, collaborator });
@@ -417,7 +433,7 @@ export const ScrapbookProvider = ({ children }) => {
     setError(null);
     
     try {
-      await axios.delete(
+      const res=await axios.delete(
         `/api/scrapbooks/${scrapbookId}/collaborators/${collaboratorId}`,
         { headers: { 'x-auth-token': userToken } }
       );
@@ -433,7 +449,9 @@ export const ScrapbookProvider = ({ children }) => {
           collaborators: prev.collaborators.filter(c => c._id !== collaboratorId)
         };
       });
-      
+      //add to timeline
+      const {timeline} = res.data;
+      setTimeline(prev => [timeline, ...prev]);
       // Emit socket event
       if (socketRef.current) {
         socketRef.current.emit('collaborator-removed', { scrapbookId, collaboratorId });
