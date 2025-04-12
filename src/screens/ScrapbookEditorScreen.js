@@ -67,7 +67,8 @@ const StarySkyBackground = () => {
 };
 
 //
-const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
+const ImageViewOverlay = ({ imageUri, onClose, animatedImage}) => {
+  if(!imageUri) return null;
   return (
     <Animated.View style={[styles.imageViewOverlay, animatedImage]}>
       <BlurComponent blur={50} />
