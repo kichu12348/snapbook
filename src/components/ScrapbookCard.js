@@ -77,7 +77,9 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
   const handleDeleteOverlayDisappear = () => {
     deleteOverlayOpacity.value = withTiming(0, { duration: 300 });
     deleteOverlayScale.value = withTiming(0, { duration: 300 });
-    setIsDeleteOverlayVisible(false);
+    setTimeout(() => {
+      setIsDeleteOverlayVisible(false);
+    }, 300);
   };
 
   const handleDeleteOverlayToggle = () => {
@@ -101,7 +103,7 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
   }, [currentScrapbook]);
 
   const DeleteOverlay = () => {
-    //if (!isDeleteOverlayVisible) return null;
+    if (!isDeleteOverlayVisible) return null;
     return (
       <Animated.View style={[styles.deleteOverlay, deleteOverlayStyle]}>
         <TouchableOpacity
