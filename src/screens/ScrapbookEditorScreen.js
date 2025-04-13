@@ -627,8 +627,18 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     }
   },[])
 
+  const debouncedFetch=(func,delay=300)=>{
+    let timeOutId;
+    return (...args)=>{
+      if(timeOutId) clearTimeout(timeOutId);
+      timeOutId=setTimeout(()=>{
+        func(...args);
+      },delay)
+    }
+  }
+
   // Create debounced search function
-  const debouncedSearch = useCallback(
+  const Search = useCallback(
     async (query) => {
       if (query.length < 2) {
         setSearchResults([]);
@@ -640,7 +650,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       setSearchError(null);
 
       try {
-        const response = await axios.get(`/api/auth/search?query=${query}`, {
+        const response = await axios.get(`/api/users/search?query=${query}`, {
           headers: { "x-auth-token": userToken },
         });
 
@@ -655,6 +665,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     },
     [searchQuery, userToken]
   );
+
+  const debouncedSearch = useMemo(() => debouncedFetch(Search,300), []);
 
   const isOwner = React.useMemo(() => {
     return currentScrapbook?.owner?._id === userData?._id;
