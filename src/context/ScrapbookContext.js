@@ -41,7 +41,16 @@ export const ScrapbookProvider = ({ children }) => {
       
       // Connection events
       socketRef.current.on('connect', () => {
-        // console.log('Socket connected:', socketRef.current.id);
+        socketRef.current.emit('join-user', userData._id.toString());
+        socketRef.current.on('scrapbook-deleted',({scrapbookId})=>{
+          setScrapbooks(prev=>prev.filter(s=>s._id !== scrapbookId));
+          if(currentScrapbook && currentScrapbook?._id === scrapbookId){
+            setCurrentScrapbook(null);
+            setCollaborators([]);
+            setTimeline([]);
+          }
+          setActiveUsers(prev=>prev.filter(u=>u?.scrapbookId !== scrapbookId));
+        })
       });
       
       socketRef.current.on('connect_error', (err) => {
@@ -475,6 +484,27 @@ export const ScrapbookProvider = ({ children }) => {
     setTimeline([]);
     setActiveUsers([]);
   };
+
+
+  const deleteScrapBook=async (id)=>{
+    if (!userToken || !id) return;
+    try{
+      const res=await axios.delete(
+        `/api/scrapbooks/${id}`,
+        { headers: { 'x-auth-token': userToken } }
+      );
+      setScrapbooks(prev => prev.filter(s => s._id !== id));
+      setCurrentScrapbook(prev=>{
+        if(!prev) return prev;
+        if(prev._id.toString() === id) return null;
+        return prev;
+      });
+      return res.data;
+    }catch(err){
+      console.log(err.message);
+      Alert.alert('Error', err.message);
+    }
+  };
   
   return (
     <ScrapbookContext.Provider value={{
@@ -496,7 +526,10 @@ export const ScrapbookProvider = ({ children }) => {
       removeCollaborator,
       clearCurrentScrapbook,
       leaveScrapbook,
-      cleanupScrapbookEvents
+      cleanupScrapbookEvents,
+      setupScrapbookEvents,
+      deleteScrapBook,
+      socketRef,
     }}>
       {children}
     </ScrapbookContext.Provider>

@@ -13,8 +13,9 @@ import {
   Platform,
   Alert,
   Keyboard,
+  Linking,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Octicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Animated, {
   useSharedValue,
@@ -27,7 +28,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { Image } from "expo-image";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
@@ -82,6 +83,18 @@ const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
         activeOpacity={1}
       >
         <View style={styles.imageHeader}>
+          <TouchableOpacity
+            style={styles.overlayCloseButton}
+            onPress={() => {
+              Linking.canOpenURL(imageUri).then((supported) => {
+                if (supported) {
+                  Linking.openURL(imageUri);
+                }
+              })
+            }}
+          >
+            <Octicons name="download" size={30} color="#FFFFFF" />
+          </TouchableOpacity>
           <TouchableOpacity onPress={onClose} style={styles.overlayCloseButton}>
             <Ionicons name="close" size={30} color="#FFFFFF" />
           </TouchableOpacity>
@@ -109,7 +122,7 @@ const RenderImageItem = React.memo(
     longPressedItem,
     openViewer,
   }) => {
-    const isLongPressed = item._id === longPressedItem;
+    const isLongPressed = item?._id === longPressedItem;
 
     return (
       <Pressable
@@ -118,7 +131,7 @@ const RenderImageItem = React.memo(
           item.layoutStyle, // Apply dynamic layout style
           isLongPressed && styles.itemLongPressed,
         ]}
-        onLongPress={() => handleLongPress(item._id)}
+        onLongPress={() => handleLongPress(item?._id)}
         delayLongPress={300}
         onPress={() => {
           clearLongPress();
@@ -141,7 +154,7 @@ const RenderImageItem = React.memo(
           >
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => initiateRemoveItem(item._id)}
+              onPress={() => initiateRemoveItem(item?._id)}
             >
               <Text style={styles.deleteButtonText}>Delete</Text>
               <Ionicons name="trash" size={18} color="#FFFFFF" />
@@ -163,7 +176,7 @@ const RenderTextItem = React.memo(
     deleteButtonAnimatedStyle,
     longPressedItem,
   }) => {
-    const isLongPressed = item._id === longPressedItem;
+    const isLongPressed = item?._id === longPressedItem;
 
     return (
       <Pressable
@@ -173,7 +186,7 @@ const RenderTextItem = React.memo(
           item.layoutStyle, // Apply dynamic layout style
           isLongPressed && styles.itemLongPressed,
         ]}
-        onLongPress={() => handleLongPress(item._id)}
+        onLongPress={() => handleLongPress(item?._id)}
         delayLongPress={300}
         onPress={clearLongPress}
       >
@@ -184,7 +197,7 @@ const RenderTextItem = React.memo(
           >
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => initiateRemoveItem(item._id)}
+              onPress={() => initiateRemoveItem(item?._id)}
             >
               <Text style={styles.deleteButtonText}>Delete</Text>
               <Ionicons name="trash" size={18} color="#FFFFFF" />
@@ -322,7 +335,7 @@ const CollaboratorsList = ({
   return (
     <View style={styles.collaboratorsContainer}>
       <Text style={styles.collaboratorsTitle}>
-        <Ionicons name="people" size={14} color="#FFCA80" /> Snap Fam
+        <Ionicons name="people" size={14} color="#FFCA80" />  Fam
       </Text>
       <ScrollView
         horizontal
@@ -330,7 +343,7 @@ const CollaboratorsList = ({
         contentContainerStyle={styles.collaboratorsScrollContent}
       >
         {collaborators.map((collab) => (
-          <View key={collab._id} style={styles.collaboratorItem}>
+          <View key={collab?._id} style={styles.collaboratorItem}>
             {collab.avatar ? (
               <Image
                 source={{
@@ -353,10 +366,10 @@ const CollaboratorsList = ({
             </Text>
             {currentScrapbook &&
               userData &&
-              currentScrapbook.owner._id === userData._id && (
+              currentScrapbook.owner?._id === userData?._id && (
                 <TouchableOpacity
                   style={styles.removeCollaboratorButton}
-                  onPress={() => handleRemoveCollaborator(collab._id)}
+                  onPress={() => handleRemoveCollaborator(collab?._id)}
                 >
                   <Ionicons name="close-circle" size={16} color="#FF5252" />
                 </TouchableOpacity>
@@ -379,6 +392,13 @@ const CollaboratorOverlayComponent = ({
   closeCollaboratorModal,
 }) => {
   //if (!isAddingCollaborator) return null;
+
+  const submitCollab=(user)=>{
+    handleSelectCollaborator(user);
+    setSearchQuery("");
+    setSearchResults([]);
+    closeCollaboratorModal();
+  }
 
   return (
     <View style={styles.collaboratorOverlay}>
@@ -457,9 +477,9 @@ const CollaboratorOverlayComponent = ({
           >
             {searchResults.map((user) => (
               <TouchableOpacity
-                key={user._id}
+                key={user?._id}
                 style={styles.userResultItem}
-                onPress={() => handleSelectCollaborator(user)}
+                onPress={() => submitCollab(user)}
               >
                 <View style={styles.userAvatarContainer}>
                   {user.avatar ? (
@@ -531,6 +551,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     addCollaborator,
     removeCollaborator,
     clearCurrentScrapbook,
+    socketRef
   } = useScrapbook();
 
   // State for scrapbook data
@@ -589,7 +610,22 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageUri, setImageUri] = useState(null);
 
-  // API URL based on environment (match your ScrapbookContext)
+
+  useEffect(()=>{
+    if(socketRef.current){
+      socketRef.current.on("scrapbook-deleted", (data) => {
+        if (data.scrapbookId === scrapbookId) {
+          navigation.goBack();
+        }
+      });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("scrapbook-deleted");
+      }
+    }
+  },[])
 
   // Create debounced search function
   const debouncedSearch = useCallback(
@@ -621,7 +657,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   );
 
   const isOwner = React.useMemo(() => {
-    return currentScrapbook?.owner._id === userData?._id;
+    return currentScrapbook?.owner?._id === userData?._id;
   }, [currentScrapbook]);
 
   // Handle search input change
@@ -635,7 +671,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     try {
       // Check if the user is already a collaborator
       const isAlreadyCollaborator = collaborators.some(
-        (collab) => collab._id === user._id
+        (collab) => collab?._id === user?._id
       );
       if (isAlreadyCollaborator) {
         setNotificationOverlay({
@@ -687,7 +723,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
             // Convert backend items to local format
             const convertedItems =
               scrapbook.items?.map((item) => ({
-                _id: item._id,
+                _id: item?._id,
                 type: item.type,
                 content: item.content,
                 uri: item.type === "image" ? item.content : null,
@@ -728,7 +764,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     if (currentScrapbook && currentScrapbook.items?.length > 0) {
       // Convert backend items to local format
       const convertedItems = currentScrapbook.items.map((item) => ({
-        _id: item._id,
+        _id: item?._id,
         type: item.type,
         content: item.content,
         uri: item.type === "image" ? item.content : null,
@@ -1092,7 +1128,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           if (result) {
             // Add to local state (context will update currentScrapbook)
             const localItem = {
-              _id: result._id,
+              _id: result?._id,
               type: "image",
               uri: imageUri,
               content: imageUri,
@@ -1171,7 +1207,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
           if (result) {
             // Add to local state (context will update currentScrapbook)
             const localItem = {
-              _id: result._id,
+              _id: result?._id,
               type: "text",
               content: newText.trim(),
               height: getRandomHeight(),
@@ -1198,13 +1234,13 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       confirmAction: async () => {
         if (isNew || id.toString().startsWith("temp-")) {
           // For new scrapbooks or temporary items, just update local state
-          setItems((prev) => prev.filter((item) => item._id !== id));
+          setItems((prev) => prev.filter((item) => item?._id !== id));
         } else {
           // For existing items, remove from server
           try {
             await removeItem(scrapbookId, id);
             // Update local state as well
-            setItems((prev) => prev.filter((item) => item._id !== id));
+            setItems((prev) => prev.filter((item) => item?._id !== id));
           } catch (error) {
             console.error("Error removing item:", error);
             Alert.alert("Error", "Failed to remove item. Please try again.");
@@ -1246,9 +1282,9 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   // Render a row of the collage
   const renderCollageRow = (rowData) => {
     return (
-      <View key={rowData._id} style={styles.collageRow}>
+      <View key={rowData?._id} style={styles.collageRow}>
         {rowData.items.map((item) => (
-          <React.Fragment key={item._id}>
+          <React.Fragment key={item?._id}>
             {item.type === "image" ? (
               <RenderImageItem
                 item={item}
@@ -1285,7 +1321,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         if (newScrapbook && items.length > 0) {
           // Add all items to the new scrapbook
           for (const item of items) {
-            await addItem(newScrapbook._id, {
+            await addItem(newScrapbook?._id, {
               type: item.type,
               content: item.type === "image" ? item.uri : item.content,
               position: { x: 0, y: 0 },
@@ -1431,8 +1467,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         );
       }
     }
-    setCollaboratorUsername("");
-    closeCollaboratorModal();
   };
 
   // Remove collaborator handler
@@ -1730,7 +1764,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
             {timeline && timeline.length > 0 ? (
               timeline.map((item) => (
                 <TimelineItem
-                  key={item._id}
+                  key={item?._id}
                   item={item}
                   formatTimelineDate={formatTimelineDate}
                   getTimelineIcon={getTimelineIcon}
@@ -2535,10 +2569,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
+    gap:30
   },
   overlayCloseButton: {
     alignSelf: "flex-end",
-  },
+  }
 });
 
 export default ScrapbookEditorScreen;

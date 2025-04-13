@@ -114,7 +114,7 @@ const DashboardScreen = ({ navigation }) => {
   const renderItem = ({ item, index }) => {
     // Convert backend data format to what ScrapbookCard expects
     const formattedScrapbook = {
-      id: item._id,
+      _id: item._id,
       title: item.title,
       cover:
         item.items &&
