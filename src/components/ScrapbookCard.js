@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -24,7 +24,7 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
   // Height variants for masonry layout
   const heights = [220, 260, 200, 240];
   const height = heights[index % heights.length];
-  const {deleteScrapBook}=useScrapbook();
+  const { deleteScrapBook, currentScrapbook } = useScrapbook();
 
   // Simplified animation values
   const opacity = useSharedValue(0);
@@ -93,6 +93,13 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
     await deleteScrapBook(scrapbook._id);
   };
 
+  useEffect(() => {
+    const isCurrentScrapbook = currentScrapbook?._id === scrapbook._id;
+    if (!isCurrentScrapbook) {
+      handleDeleteOverlayDisappear();
+    }
+  }, [currentScrapbook]);
+
   const DeleteOverlay = () => {
     //if (!isDeleteOverlayVisible) return null;
     return (
@@ -106,10 +113,7 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
             alignItems: "center",
           }}
         >
-          <TouchableOpacity
-            onPress={handleDelete}
-            style={styles.deleteButton}
-          >
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
             <Ionicons name="trash-outline" size={24} color="#FFCA80" />
             <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
@@ -125,6 +129,7 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
         onPress={onPress}
         activeOpacity={0.9}
         onLongPress={handleDeleteOverlayToggle}
+        delayLongPress={300}
       >
         <Image
           source={{ uri: coverImage }}
