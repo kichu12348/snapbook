@@ -28,7 +28,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { Image } from "expo-image";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
@@ -90,7 +90,7 @@ const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
                 if (supported) {
                   Linking.openURL(imageUri);
                 }
-              })
+              });
             }}
           >
             <Octicons name="download" size={30} color="#FFFFFF" />
@@ -190,7 +190,7 @@ const RenderTextItem = React.memo(
         delayLongPress={300}
         onPress={clearLongPress}
       >
-        <Text style={styles.textItem}>❝ {item.content} ❞</Text>
+        <Text style={styles.textItem}>❝{item.content}❞</Text>
         {isLongPressed && (
           <Animated.View
             style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
@@ -210,20 +210,17 @@ const RenderTextItem = React.memo(
 );
 
 // Timeline component
-const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
+const TimelineItem =React.memo(({ item, formatTimelineDate, getTimelineIcon }) => {
   // if(item.action ==="added" && item.itemType === "image" && item.user.username==="ramanan"){
   //   console.log("item",item)
   // }
+  const [imageErr,setImageError] = useState(false);
   return (
     <View style={styles.timelineItem}>
       <View style={styles.timelineUserContainer}>
         {item.user?.avatar ? (
           <Image
-            source={{
-              uri:
-                item.user?.avatar ||
-                "https://randomuser.me/api/portraits/lego/1.jpg",
-            }}
+            source={{ uri: item.user.avatar }}
             style={styles.timelineAvatar}
             cachePolicy="memory-disk"
           />
@@ -253,7 +250,7 @@ const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
           </View>
         )}
 
-        {item.itemType === "image" && (
+        {item.itemType === "image" && !imageErr && (
           <Image
             source={{
               uri:
@@ -266,7 +263,16 @@ const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
             height={100}
             cachePolicy="memory-disk"
             transition={300}
+            alt="Dis is Image"
+            onError={(e) => {
+              if(e.error) setImageError(true);
+            }}
           />
+        )}
+        {imageErr && (
+          <Text style={styles.timelineErrorText}>
+            Image not available or removed.
+          </Text>
         )}
       </View>
 
@@ -279,7 +285,7 @@ const TimelineItem = ({ item, formatTimelineDate, getTimelineIcon }) => {
       </View>
     </View>
   );
-};
+});
 
 // Active Users Component
 const ActiveUsersComponent = ({ activeUsers, userData }) => {
@@ -335,7 +341,7 @@ const CollaboratorsList = ({
   return (
     <View style={styles.collaboratorsContainer}>
       <Text style={styles.collaboratorsTitle}>
-        <Ionicons name="people" size={14} color="#FFCA80" />  Fam
+        <Ionicons name="people" size={14} color="#FFCA80" /> Fam
       </Text>
       <ScrollView
         horizontal
@@ -346,11 +352,7 @@ const CollaboratorsList = ({
           <View key={collab?._id} style={styles.collaboratorItem}>
             {collab.avatar ? (
               <Image
-                source={{
-                  uri:
-                    collab.avatar ||
-                    "https://randomuser.me/api/portraits/lego/1.jpg",
-                }}
+                source={{ uri: collab.avatar }}
                 style={styles.collaboratorAvatar}
                 cachePolicy="memory-disk"
               />
@@ -393,12 +395,12 @@ const CollaboratorOverlayComponent = ({
 }) => {
   //if (!isAddingCollaborator) return null;
 
-  const submitCollab=(user)=>{
+  const submitCollab = (user) => {
     handleSelectCollaborator(user);
     setSearchQuery("");
     setSearchResults([]);
     closeCollaboratorModal();
-  }
+  };
 
   return (
     <View style={styles.collaboratorOverlay}>
@@ -551,7 +553,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     addCollaborator,
     removeCollaborator,
     clearCurrentScrapbook,
-    socketRef
+    socketRef,
   } = useScrapbook();
 
   // State for scrapbook data
@@ -610,9 +612,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageUri, setImageUri] = useState(null);
 
-
-  useEffect(()=>{
-    if(socketRef.current){
+  useEffect(() => {
+    if (socketRef.current) {
       socketRef.current.on("scrapbook-deleted", (data) => {
         if (data.scrapbookId === scrapbookId) {
           navigation.goBack();
@@ -624,18 +625,18 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
       if (socketRef.current) {
         socketRef.current.off("scrapbook-deleted");
       }
-    }
-  },[])
+    };
+  }, []);
 
-  const debouncedFetch=(func,delay=300)=>{
+  const debouncedFetch = (func, delay = 300) => {
     let timeOutId;
-    return (...args)=>{
-      if(timeOutId) clearTimeout(timeOutId);
-      timeOutId=setTimeout(()=>{
+    return (...args) => {
+      if (timeOutId) clearTimeout(timeOutId);
+      timeOutId = setTimeout(() => {
         func(...args);
-      },delay)
-    }
-  }
+      }, delay);
+    };
+  };
 
   // Create debounced search function
   const Search = useCallback(
@@ -666,7 +667,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     [searchQuery, userToken]
   );
 
-  const debouncedSearch = useMemo(() => debouncedFetch(Search,300), []);
+  const debouncedSearch = useMemo(() => debouncedFetch(Search, 300), []);
 
   const isOwner = React.useMemo(() => {
     return currentScrapbook?.owner?._id === userData?._id;
@@ -1952,7 +1953,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    position:"relative"
+    position: "relative",
   },
   titleTextContainer: {
     flexDirection: "row",
@@ -2017,6 +2018,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     lineHeight: 22,
+    paddingHorizontal: 2,
   },
   removeButton: {
     display: "none", // Hide the old remove button
@@ -2328,7 +2330,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(42, 30, 92, 0.5)",
     borderRadius: 8,
     padding: 10,
-    marginTop: 6,
+    marginTop: 6
   },
 
   timelineDetailText: {
@@ -2347,6 +2349,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  timelineErrorText:{
+    color: "#FF5252",
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
   },
   starsContainer: {
     position: "absolute",
@@ -2581,11 +2589,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
-    gap:30
+    gap: 30,
   },
   overlayCloseButton: {
     alignSelf: "flex-end",
-  }
+  },
 });
 
 export default ScrapbookEditorScreen;
