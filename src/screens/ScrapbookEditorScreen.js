@@ -211,9 +211,6 @@ const RenderTextItem = React.memo(
 
 // Timeline component
 const TimelineItem =React.memo(({ item, formatTimelineDate, getTimelineIcon }) => {
-  // if(item.action ==="added" && item.itemType === "image" && item.user.username==="ramanan"){
-  //   console.log("item",item)
-  // }
   const [imageErr,setImageError] = useState(false);
   return (
     <View style={styles.timelineItem}>
@@ -242,7 +239,7 @@ const TimelineItem =React.memo(({ item, formatTimelineDate, getTimelineIcon }) =
           </Text>
         </View>
 
-        {item.details?.content && item.itemType === "text" && (
+        {item.details?.content && (item.itemType === "text"||item.itemType === "title") && (
           <View style={styles.timelineDetail}>
             <Text style={styles.timelineDetailText}>
               ❝{item.details.content}❞
@@ -273,6 +270,26 @@ const TimelineItem =React.memo(({ item, formatTimelineDate, getTimelineIcon }) =
           <Text style={styles.timelineErrorText}>
             Image not available or removed.
           </Text>
+        )}
+        {item.itemType === "collaborator" &&(
+          <View style={styles.timelineAddedCollaborator}>
+            {item.details?.collaborator.avatar ? (
+              <Image
+                source={{ uri: item.details?.collaborator.avatar }}
+                style={styles.timelineAvatar}
+                cachePolicy="memory-disk"
+              />
+            ):(
+              <Ionicons
+                name="person-circle-outline"
+                size={24}
+                color="#5C6BC0"
+              />
+            )}
+            <Text style={styles.timelineDetailText}>
+              {item.details?.collaborator.username}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -371,7 +388,7 @@ const CollaboratorsList = ({
               currentScrapbook.owner?._id === userData?._id && (
                 <TouchableOpacity
                   style={styles.removeCollaboratorButton}
-                  onPress={() => handleRemoveCollaborator(collab?._id)}
+                  onPress={() => handleRemoveCollaborator(collab?._id, collab.username)}
                 >
                   <Ionicons name="close-circle" size={16} color="#FF5252" />
                 </TouchableOpacity>
@@ -1386,7 +1403,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
 
   // Get appropriate icon for timeline item
   const getTimelineIcon = (itemType, action) => {
-    if (action === "removed") return "trash-outline";
+    if (action === "added" && itemType === "collaborator") return "people-outline";
+    if (action === "removed" && itemType!=="collaborator") return "trash-outline";
 
     switch (itemType) {
       case "image":
@@ -1395,6 +1413,10 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         return "text-outline";
       case "title":
         return "create-outline";
+      case "collaborator":
+        return "people-outline";
+      case "scrapbook":
+        return "book-outline";
       default:
         return "document-outline";
     }
@@ -1483,12 +1505,12 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   // Remove collaborator handler
-  const handleRemoveCollaborator = (collaboratorId) => {
+  const handleRemoveCollaborator = (collaboratorId,username) => {
     setConfirmOverlay({
       visible: true,
       title: "Remove Collaborator",
       message:
-        "Are you sure you want to remove this collaborator from your scrapbook?",
+        `Are you sure you want to remove ❝${username}❞ from your scrapbook?`,
       confirmAction: async () => {
         try {
           await removeCollaborator(scrapbookId, collaboratorId);
@@ -1805,7 +1827,6 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
               collaborators={collaborators}
               currentScrapbook={currentScrapbook}
               handleRemoveCollaborator={handleRemoveCollaborator}
-              handleAddCollaborator={handleAddCollaborator}
               userData={userData}
             />
           )}
@@ -2295,6 +2316,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 2,
     borderColor: "#2A1E5C",
+  },
+
+  timelineAddedCollaborator: {
+    flexDirection: "row",
+            alignItems: "center",
+            justifyContent:"flex-start",
+            marginTop: 8,
+            backgroundColor: "rgba(42, 30, 92, 0.5)",
+            padding: 8,
+            borderRadius: 8,
   },
 
   timelineContent: {
