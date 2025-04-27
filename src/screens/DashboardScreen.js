@@ -27,6 +27,43 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
+const goofText = [
+  "Scrap it up!",
+  "Stay goofy, scrapbooker!",
+  "No glitter, no glory.",
+  "Memory lane starts here.",
+  "Craft. Laugh. Repeat.",
+  "Chaos, but make it creative.",
+  "Glue-free zone!",
+  "Silly vibes only.",
+  "Scrapbook vibes 24/7.",
+];
+
+const BottomComponent = React.memo(() => {
+  const [text, setText] = React.useState(goofText[0]);
+  const currentIndex = React.useRef(0);
+  const random = React.useCallback(() => {
+    currentIndex.current =
+      currentIndex.current + 1 >= goofText.length
+        ? 0
+        : currentIndex.current + 1;
+    setText(goofText[currentIndex.current]);
+  }, []);
+
+  return (
+    <View style={styles.bottomContainer}>
+      <TouchableOpacity
+        onPress={random}
+        activeOpacity={1}
+        style={styles.bottomTextContainer}
+      >
+        <Text style={styles.bottomText}>{text}</Text>
+      </TouchableOpacity>
+      <Text style={styles.footerText}>Made wid ❤️ by Kichu</Text>
+    </View>
+  );
+});
+
 const StarySkyBackground = React.memo(() => {
   const arrSize = 100;
   return (
@@ -185,14 +222,6 @@ const DashboardScreen = ({ navigation }) => {
 
   const insets = useSafeAreaInsets();
 
-  const FooterElement = () => {
-    return (
-      <View style={{ paddingBottom: insets.bottom }}>
-        <Text style={styles.footerText}>Made wid ❤️ by Kichu</Text>
-      </View>
-    );
-  };
-
   return (
     <>
       <LinearGradient
@@ -240,7 +269,7 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
           <LinearGradient
-            colors={["#000000","#00000080","transparent"]}
+            colors={["#000000", "#00000080", "transparent"]}
             style={styles.topGradient}
           />
         </Animated.View>
@@ -256,10 +285,12 @@ const DashboardScreen = ({ navigation }) => {
             columnWrapperStyle={styles.columnWrapper}
             contentContainerStyle={[
               styles.listContent,
+              { paddingBottom: insets.bottom + 30 },
               scrapbooks?.length === 0 && styles.emptyList,
             ]}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmptyComponent}
+            ListFooterComponent={<BottomComponent />}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -292,7 +323,6 @@ const DashboardScreen = ({ navigation }) => {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
-        {!loading && <FooterElement />}
       </View>
     </>
   );
@@ -417,6 +447,22 @@ const styles = StyleSheet.create({
     right: 0,
     height: 100,
     width: width,
+  },
+  bottomText: {
+    color: "#5C6BC080",
+    fontSize: 50,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  bottomTextContainer: {
+    minHeight: 150,
+    marginTop: 90,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bottomContainer: {
+    gap: 20,
+    paddingTop: 20,
   },
 });
 

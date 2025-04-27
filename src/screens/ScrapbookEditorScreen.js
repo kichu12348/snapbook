@@ -358,7 +358,7 @@ const CollaboratorsList = ({
   return (
     <View style={styles.collaboratorsContainer}>
       <Text style={styles.collaboratorsTitle}>
-        <Ionicons name="people" size={14} color="#FFCA80" /> Fam
+        <Ionicons name="people" size={14} color="#FFCA80" /> Peeps
       </Text>
       <ScrollView
         horizontal
