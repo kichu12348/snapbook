@@ -69,14 +69,12 @@ const ScrapbookCard = ({ scrapbook, index, onPress,cb }) => {
     React.useState(false);
 
   const handleDeleteOverlayAppear = () => {
-    if (isDeleteOverlayVisible) return;
     setIsDeleteOverlayVisible(true);
     deleteOverlayOpacity.value = withTiming(1, { duration: 300 });
     deleteOverlayScale.value = withTiming(1, { duration: 300 });
   };
 
   const handleDeleteOverlayDisappear = () => {
-    if (!isDeleteOverlayVisible) return;
     deleteOverlayOpacity.value = withTiming(0, { duration: 300 });
     deleteOverlayScale.value = withTiming(0, { duration: 300 });
     setTimeout(() => {
