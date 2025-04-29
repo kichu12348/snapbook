@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -39,7 +39,7 @@ const goofText = [
   "Scrapbook vibes 24/7.",
 ];
 
-const BottomComponent = React.memo(() => {
+const bottomComponent = React.memo(() => {
   const [text, setText] = React.useState(goofText[0]);
   const currentIndex = React.useRef(0);
   const random = React.useCallback(() => {
@@ -102,6 +102,8 @@ const DashboardScreen = ({ navigation }) => {
   const { scrapbooks, loading, fetchScrapbooks, createScrapbook } =
     useScrapbook();
   const [refreshing, setRefreshing] = React.useState(false);
+
+  const SetOfScrapBookCb = React.useRef(new Set());
 
   const MemoizedStarySkyBackground = React.useCallback(() => {
     return <StarySkyBackground />;
@@ -172,13 +174,16 @@ const DashboardScreen = ({ navigation }) => {
     return (
       <ScrapbookCard
         scrapbook={formattedScrapbook}
+        cb={SetOfScrapBookCb}
         index={index}
-        onPress={() =>
+        onPress={() =>{
           navigation.navigate("ScrapbookEditor", {
             scrapbookId: item._id,
             title: item.title,
             isNew: false,
-          })
+          });
+          SetOfScrapBookCb.current.forEach((cb) => cb());
+        }
         }
       />
     );
@@ -188,6 +193,7 @@ const DashboardScreen = ({ navigation }) => {
     try {
       const result = await createScrapbook("New Scrapbook");
       if (result) {
+        SetOfScrapBookCb.current.forEach((cb) => cb());
         navigation.navigate("ScrapbookEditor", {
           scrapbookId: result._id,
           title: result.title,
@@ -290,7 +296,7 @@ const DashboardScreen = ({ navigation }) => {
             ]}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmptyComponent}
-            ListFooterComponent={<BottomComponent />}
+            ListFooterComponent={bottomComponent}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

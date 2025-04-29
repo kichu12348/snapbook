@@ -1,4 +1,4 @@
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -20,7 +20,7 @@ import { useScrapbook } from "../context/ScrapbookContext";
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 48) / 2;
 
-const ScrapbookCard = ({ scrapbook, index, onPress }) => {
+const ScrapbookCard = ({ scrapbook, index, onPress,cb }) => {
   // Height variants for masonry layout
   const heights = [220, 260, 200, 240];
   const height = heights[index % heights.length];
@@ -69,18 +69,27 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
     React.useState(false);
 
   const handleDeleteOverlayAppear = () => {
+    if (isDeleteOverlayVisible) return;
     setIsDeleteOverlayVisible(true);
     deleteOverlayOpacity.value = withTiming(1, { duration: 300 });
     deleteOverlayScale.value = withTiming(1, { duration: 300 });
   };
 
   const handleDeleteOverlayDisappear = () => {
+    if (!isDeleteOverlayVisible) return;
     deleteOverlayOpacity.value = withTiming(0, { duration: 300 });
     deleteOverlayScale.value = withTiming(0, { duration: 300 });
     setTimeout(() => {
       setIsDeleteOverlayVisible(false);
     }, 300);
   };
+
+  useEffect(()=>{
+    cb.current.add(handleDeleteOverlayDisappear);
+    return ()=>{
+      cb.current.delete(handleDeleteOverlayDisappear);
+    }
+  },[]);
 
   const handleDeleteOverlayToggle = () => {
     if (isDeleteOverlayVisible) {
@@ -94,13 +103,6 @@ const ScrapbookCard = ({ scrapbook, index, onPress }) => {
     handleDeleteOverlayDisappear();
     await deleteScrapBook(scrapbook._id);
   };
-
-  useEffect(() => {
-    const isCurrentScrapbook = currentScrapbook?._id === scrapbook._id;
-    if (!isCurrentScrapbook) {
-      handleDeleteOverlayDisappear();
-    }
-  }, [currentScrapbook]);
 
   const DeleteOverlay = () => {
     if (!isDeleteOverlayVisible) return null;
