@@ -83,9 +83,14 @@ const ScrapbookCard = ({ scrapbook, index, onPress,cb }) => {
   };
 
   useEffect(()=>{
-    cb.current.add(handleDeleteOverlayDisappear);
+    const clearOverlay=()=>{
+      deleteOverlayOpacity.value = 0;
+      deleteOverlayScale.value = 0;
+      setIsDeleteOverlayVisible(false);
+    }
+    cb.current.add(clearOverlay);
     return ()=>{
-      cb.current.delete(handleDeleteOverlayDisappear);
+      cb.current.delete(clearOverlay);
     }
   },[]);
 
