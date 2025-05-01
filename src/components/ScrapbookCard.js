@@ -24,7 +24,7 @@ const ScrapbookCard = ({ scrapbook, index, onPress,cb }) => {
   // Height variants for masonry layout
   const heights = [220, 260, 200, 240];
   const height = heights[index % heights.length];
-  const { deleteScrapBook, currentScrapbook } = useScrapbook();
+  const { deleteScrapBook } = useScrapbook();
 
   // Simplified animation values
   const opacity = useSharedValue(0);
