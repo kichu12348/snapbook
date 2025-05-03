@@ -35,6 +35,29 @@
     },
     "updates": {
       "url": "https://u.expo.dev/6213b132-f271-4e91-a631-9dfea3796ead"
-    }
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/allspice.ttf"
+          ],
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Allspice",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/allspice.ttf",
+                    "weight": 400
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    ]
   }
 }

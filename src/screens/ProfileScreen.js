@@ -751,7 +751,7 @@ const ProfileScreen = ({ navigation }) => {
         <View style={{ height: 50 }} />
         <View>
           <Text style={{ color: "#9575CD", textAlign: "center", fontSize: 12 }}>
-            Version 1.0.0
+            Version 2.0.0
           </Text>
           <Text style={{ color: "#9575CD", textAlign: "center", fontSize: 12 }}>
             App updates are automatic

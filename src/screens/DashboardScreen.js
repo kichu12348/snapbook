@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -28,26 +28,54 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const goofText = [
-  "Scrap it up!",
-  "Stay goofy, scrapbooker!",
+  "Snap it up!",
+  "Stay goofy, snapbooker!",
   "No glitter, no glory.",
   "Memory lane starts here.",
   "Craft. Laugh. Repeat.",
   "Chaos, but make it creative.",
   "Glue-free zone!",
   "Silly vibes only.",
-  "Scrapbook vibes 24/7.",
+  "Snapbook vibes 24/7.",
+  "Messy hands, happy heart.",
+  "therapy in session.",
+  "magic in progress.",
+  "squad goals.",
+  "dreams come true.",
+  "adventures await.",
+  "love in the air.",
+  "happiness unlocked.",
+  "fun for everyone.",
+  "joyride ahead.",
+  "bliss in the making.",
+  "memories in the making.",
+  "create your own sunshine.",
+  "sparkle and shine.",
+  "embrace the chaos.",
+  "create your own magic.",
+  "life is a canvas.",
+  "capture the moment.",
+  "create your own adventure.",
+  "make it happen.",
+  "create your own path.",
+  "create your own story.",
+  "create your own destiny.",
+  "create your own happiness.",
 ];
 
 const bottomComponent = React.memo(() => {
   const [text, setText] = React.useState(goofText[0]);
   const currentIndex = React.useRef(0);
   const random = React.useCallback(() => {
-    currentIndex.current =
-      currentIndex.current + 1 >= goofText.length
-        ? 0
-        : currentIndex.current + 1;
-    setText(goofText[currentIndex.current]);
+    let randomIndex = currentIndex.current;
+    while (randomIndex === currentIndex.current)
+      randomIndex = Math.floor(Math.random() * goofText.length);
+    setText(goofText[randomIndex]);
+    currentIndex.current = randomIndex;
+  }, []);
+
+  useEffect(() => {
+    random();
   }, []);
 
   return (
@@ -176,15 +204,14 @@ const DashboardScreen = ({ navigation }) => {
         scrapbook={formattedScrapbook}
         cb={SetOfScrapBookCb}
         index={index}
-        onPress={() =>{
+        onPress={() => {
           navigation.navigate("ScrapbookEditor", {
             scrapbookId: item._id,
             title: item.title,
             isNew: false,
           });
           SetOfScrapBookCb.current.forEach((cb) => cb());
-        }
-        }
+        }}
       />
     );
   };
@@ -360,6 +387,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
+    fontFamily: "AllSpice",
   },
   subtitleText: {
     fontSize: 14,
@@ -445,6 +473,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginTop: 20,
+    fontFamily: "AllSpice",
   },
   topGradient: {
     position: "absolute",
@@ -457,11 +486,12 @@ const styles = StyleSheet.create({
   bottomText: {
     color: "#5C6BC080",
     fontSize: 50,
-    fontWeight: "bold",
+    fontWeight: 800,
     textAlign: "center",
+    fontFamily:"AllSpice",
   },
   bottomTextContainer: {
-    minHeight: 150,
+    minHeight: 200,
     marginTop: 90,
     alignItems: "center",
     justifyContent: "center",

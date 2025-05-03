@@ -34,6 +34,8 @@ import { useScrapbook } from "../context/ScrapbookContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadImage } from "../../utils/upload";
 import axios from "axios";
+import { saveToGallery } from "../../utils/downloadAndSave";
+import { ca, se } from "date-fns/locale";
 
 const { width: SCREEN_WIDTH, height } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
@@ -67,8 +69,51 @@ const StarySkyBackground = () => {
   );
 };
 
+const DownloadOverlay = ({
+  visible,
+  downloadProgressAnimStyle,
+  imageUri,
+}) => {
+  if (!visible) return null;
+  return (
+    <Animated.View style={styles.downloadOverlay}>
+      <View style={styles.downloadContainer}>
+        <Animated.View
+          style={[styles.downloadProgressBar, downloadProgressAnimStyle]}
+        />
+      </View>
+    </Animated.View>
+  );
+};
+
 //
 const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const downloadProgress = useSharedValue(0);
+  const downloadProgressAnimStyle = useAnimatedStyle(() => {
+    return {
+      width: `${downloadProgress.value}%`,
+    };
+  });
+
+  const handleDownload = async () => {
+    if (!imageUri || isDownloading) return;
+    setIsDownloading(true);
+    downloadProgress.value = 0;
+    await saveToGallery(imageUri, (progress) => {
+      downloadProgress.value = withTiming(progress, {
+        duration: 300,
+        easing: Easing.inOut(Easing.ease),
+      });
+    });
+
+    setTimeout(() => {
+      setIsDownloading(false);
+      downloadProgress.value = 0;
+    }, 400);
+  };
+
   if (!imageUri) return null;
   return (
     <Animated.View style={[styles.imageViewOverlay, animatedImage]}>
@@ -76,6 +121,11 @@ const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
       <LinearGradient
         colors={["#000000", "transparent", "transparent", "transparent"]}
         style={StyleSheet.absoluteFill}
+      />
+      <DownloadOverlay
+        visible={isDownloading}
+        downloadProgressAnimStyle={downloadProgressAnimStyle}
+        imageUri={imageUri}
       />
       <TouchableOpacity
         style={StyleSheet.absoluteFill}
@@ -85,13 +135,7 @@ const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
         <View style={styles.imageHeader}>
           <TouchableOpacity
             style={styles.overlayCloseButton}
-            onPress={() => {
-              Linking.canOpenURL(imageUri).then((supported) => {
-                if (supported) {
-                  Linking.openURL(imageUri);
-                }
-              });
-            }}
+            onPress={handleDownload}
           >
             <Octicons name="download" size={30} color="#FFFFFF" />
           </TouchableOpacity>
@@ -190,7 +234,7 @@ const RenderTextItem = React.memo(
         delayLongPress={300}
         onPress={clearLongPress}
       >
-        <Text style={styles.textItem}>❝{item.content}❞</Text>
+        <Text style={styles.textItem}>{item.content}</Text>
         {isLongPressed && (
           <Animated.View
             style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
@@ -210,99 +254,102 @@ const RenderTextItem = React.memo(
 );
 
 // Timeline component
-const TimelineItem =React.memo(({ item, formatTimelineDate, getTimelineIcon }) => {
-  const [imageErr,setImageError] = useState(false);
-  return (
-    <View style={styles.timelineItem}>
-      <View style={styles.timelineUserContainer}>
-        {item.user?.avatar ? (
-          <Image
-            source={{ uri: item.user.avatar }}
-            style={styles.timelineAvatar}
-            cachePolicy="memory-disk"
-          />
-        ) : (
-          <Ionicons name="person-circle-outline" size={24} color="#5C6BC0" />
-        )}
-      </View>
-
-      <View style={styles.timelineContent}>
-        <View style={styles.timelineHeader}>
-          <Text style={styles.timelineUser}>
-            {item.user?.username || "Unknown User"}
-          </Text>
-          <Text style={styles.timelineAction}>
-            {item.action} {item.itemType}
-          </Text>
-          <Text style={styles.timelineTimestamp}>
-            {formatTimelineDate(item.timestamp)}
-          </Text>
+const TimelineItem = React.memo(
+  ({ item, formatTimelineDate, getTimelineIcon }) => {
+    const [imageErr, setImageError] = useState(false);
+    return (
+      <View style={styles.timelineItem}>
+        <View style={styles.timelineUserContainer}>
+          {item.user?.avatar ? (
+            <Image
+              source={{ uri: item.user.avatar }}
+              style={styles.timelineAvatar}
+              cachePolicy="memory-disk"
+            />
+          ) : (
+            <Ionicons name="person-circle-outline" size={24} color="#5C6BC0" />
+          )}
         </View>
 
-        {item.details?.content && (item.itemType === "text"||item.itemType === "title") && (
-          <View style={styles.timelineDetail}>
-            <Text style={styles.timelineDetailText}>
-              ❝{item.details.content}❞
+        <View style={styles.timelineContent}>
+          <View style={styles.timelineHeader}>
+            <Text style={styles.timelineUser}>
+              {item.user?.username || "Unknown User"}
+            </Text>
+            <Text style={styles.timelineAction}>
+              {item.action} {item.itemType}
+            </Text>
+            <Text style={styles.timelineTimestamp}>
+              {formatTimelineDate(item.timestamp)}
             </Text>
           </View>
-        )}
 
-        {item.itemType === "image" && !imageErr && (
-          <Image
-            source={{
-              uri:
-                item.details?.content ||
-                "https://storage.googleapis.com/snapbook_bucket/image-removed.png",
-            }}
-            style={styles.timelineThumbnail}
-            contentFit="contain"
-            width={100}
-            height={100}
-            cachePolicy="memory-disk"
-            transition={300}
-            alt="Dis is Image"
-            onError={(e) => {
-              if(e.error) setImageError(true);
-            }}
-          />
-        )}
-        {imageErr && (
-          <Text style={styles.timelineErrorText}>
-            Image not available or removed.
-          </Text>
-        )}
-        {item.itemType === "collaborator" &&(
-          <View style={styles.timelineAddedCollaborator}>
-            {item.details?.collaborator.avatar ? (
-              <Image
-                source={{ uri: item.details?.collaborator.avatar }}
-                style={styles.timelineAvatar}
-                cachePolicy="memory-disk"
-              />
-            ):(
-              <Ionicons
-                name="person-circle-outline"
-                size={24}
-                color="#5C6BC0"
-              />
+          {item.details?.content &&
+            (item.itemType === "text" || item.itemType === "title") && (
+              <View style={styles.timelineDetail}>
+                <Text style={styles.timelineDetailText}>
+                  ❝{item.details.content}❞
+                </Text>
+              </View>
             )}
-            <Text style={styles.timelineDetailText}>
-              {item.details?.collaborator.username}
-            </Text>
-          </View>
-        )}
-      </View>
 
-      <View style={styles.timelineIconContainer}>
-        <Ionicons
-          name={getTimelineIcon(item.itemType, item.action)}
-          size={20}
-          color="#9575CD"
-        />
+          {item.itemType === "image" && !imageErr && (
+            <Image
+              source={{
+                uri:
+                  item.details?.content ||
+                  "https://storage.googleapis.com/snapbook_bucket/image-removed.png",
+              }}
+              style={styles.timelineThumbnail}
+              contentFit="contain"
+              width={100}
+              height={100}
+              cachePolicy="memory-disk"
+              transition={300}
+              alt="Dis is Image"
+              onError={(e) => {
+                if (e.error) setImageError(true);
+              }}
+            />
+          )}
+          {imageErr && (
+            <Text style={styles.timelineErrorText}>
+              Image not available or removed.
+            </Text>
+          )}
+          {item.itemType === "collaborator" && (
+            <View style={styles.timelineAddedCollaborator}>
+              {item.details?.collaborator.avatar ? (
+                <Image
+                  source={{ uri: item.details?.collaborator.avatar }}
+                  style={styles.timelineAvatar}
+                  cachePolicy="memory-disk"
+                />
+              ) : (
+                <Ionicons
+                  name="person-circle-outline"
+                  size={24}
+                  color="#5C6BC0"
+                />
+              )}
+              <Text style={styles.timelineDetailText}>
+                {item.details?.collaborator.username}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.timelineIconContainer}>
+          <Ionicons
+            name={getTimelineIcon(item.itemType, item.action)}
+            size={20}
+            color="#9575CD"
+          />
+        </View>
       </View>
-    </View>
-  );
-});
+    );
+  }
+);
 
 // Active Users Component
 const ActiveUsersComponent = ({ activeUsers, userData }) => {
@@ -388,7 +435,9 @@ const CollaboratorsList = ({
               currentScrapbook.owner?._id === userData?._id && (
                 <TouchableOpacity
                   style={styles.removeCollaboratorButton}
-                  onPress={() => handleRemoveCollaborator(collab?._id, collab.username)}
+                  onPress={() =>
+                    handleRemoveCollaborator(collab?._id, collab.username)
+                  }
                 >
                   <Ionicons name="close-circle" size={16} color="#FF5252" />
                 </TouchableOpacity>
@@ -1403,8 +1452,10 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
 
   // Get appropriate icon for timeline item
   const getTimelineIcon = (itemType, action) => {
-    if (action === "added" && itemType === "collaborator") return "people-outline";
-    if (action === "removed" && itemType!=="collaborator") return "trash-outline";
+    if (action === "added" && itemType === "collaborator")
+      return "people-outline";
+    if (action === "removed" && itemType !== "collaborator")
+      return "trash-outline";
 
     switch (itemType) {
       case "image":
@@ -1505,12 +1556,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   // Remove collaborator handler
-  const handleRemoveCollaborator = (collaboratorId,username) => {
+  const handleRemoveCollaborator = (collaboratorId, username) => {
     setConfirmOverlay({
       visible: true,
       title: "Remove Collaborator",
-      message:
-        `Are you sure you want to remove ❝${username}❞ from your scrapbook?`,
+      message: `Are you sure you want to remove ❝${username}❞ from your scrapbook?`,
       confirmAction: async () => {
         try {
           await removeCollaborator(scrapbookId, collaboratorId);
@@ -1620,6 +1670,11 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     return () => clearTimeout(timeOut);
   }, []);
 
+  const cancelChangeTitle = () => {
+    setTitle(currentScrapbook?.title || "");
+    setIsEditingTitle(false);
+  };
+
   if (!start) {
     return (
       <View style={styles.loadingContainer}>
@@ -1678,6 +1733,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
                 onChangeText={setTitle}
                 autoFocus
                 maxLength={30}
+                //onSubmitEditing={handleTitleUpdate}
+                onBlur={cancelChangeTitle}
               />
               <TouchableOpacity
                 onPress={handleTitleUpdate}
@@ -1966,6 +2023,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: 16,
     fontSize: 16,
+    fontFamily: "AllSpice",
   },
   titleContainer: {
     paddingHorizontal: 16,
@@ -1987,6 +2045,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#FFFFFF",
     marginRight: 8,
+    fontFamily: "AllSpice",
   },
   titleEditContainer: {
     flexDirection: "row",
@@ -1999,6 +2058,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#FFFFFF",
     paddingBottom: 4,
+    fontFamily: "AllSpice",
   },
   titleEditDoneButton: {
     marginLeft: 10,
@@ -2038,7 +2098,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontStyle: "italic",
-    lineHeight: 22,
+    fontFamily:"AllSpice",
+    fontWeight:200,
+    // lineHeight: 30,
     paddingHorizontal: 2,
   },
   removeButton: {
@@ -2089,6 +2151,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: "top",
     fontSize: 16,
+    fontFamily: "AllSpice",
   },
   textInputButtons: {
     flexDirection: "row",
@@ -2320,12 +2383,12 @@ const styles = StyleSheet.create({
 
   timelineAddedCollaborator: {
     flexDirection: "row",
-            alignItems: "center",
-            justifyContent:"flex-start",
-            marginTop: 8,
-            backgroundColor: "rgba(42, 30, 92, 0.5)",
-            padding: 8,
-            borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginTop: 8,
+    backgroundColor: "rgba(42, 30, 92, 0.5)",
+    padding: 8,
+    borderRadius: 8,
   },
 
   timelineContent: {
@@ -2361,7 +2424,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(42, 30, 92, 0.5)",
     borderRadius: 8,
     padding: 10,
-    marginTop: 6
+    marginTop: 6,
   },
 
   timelineDetailText: {
@@ -2381,7 +2444,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  timelineErrorText:{
+  timelineErrorText: {
     color: "#FF5252",
     fontSize: 14,
     marginTop: 8,
@@ -2406,6 +2469,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 8,
+    fontFamily:"AllSpice",
   },
   collaboratorsScrollContent: {
     paddingVertical: 4,
@@ -2418,6 +2482,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     marginRight: 8,
+    gap: 4,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
@@ -2433,8 +2498,9 @@ const styles = StyleSheet.create({
   },
   collaboratorName: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 12,
     maxWidth: 100,
+    fontFamily:"AllSpice",
   },
   removeCollaboratorButton: {
     marginLeft: 6,
@@ -2625,6 +2691,37 @@ const styles = StyleSheet.create({
   overlayCloseButton: {
     alignSelf: "flex-end",
   },
+  downloadOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 200,
+    gap: 20,
+    ...StyleSheet.absoluteFillObject,
+  },
+  downloadContainer:{
+    borderRadius: 16,
+    height: 5,
+    width: "80%",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    backgroundColor:"rgba(42, 30, 92, 0.5)",
+    overflow: "hidden",
+    position:"relative"
+  },
+  downloadProgressBar:{
+    height: 5,
+    backgroundColor: "#ffffff",
+    borderRadius: 5,
+  },
+  downloadImage:{
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+  }
 });
 
 export default ScrapbookEditorScreen;

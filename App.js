@@ -6,7 +6,13 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Updates from "expo-updates";
-import {enableScreens} from "react-native-screens";
+import { enableScreens } from "react-native-screens";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
+
 enableScreens(false);
 
 // Import screens
@@ -53,11 +59,7 @@ function MainNavigator() {
 
   return (
     <NavigationContainer theme={DreamyTheme}>
-      <StatusBar
-        style="light"
-        backgroundColor={"#000"}
-        translucent
-      />
+      <StatusBar style="light" backgroundColor={"#000"} translucent />
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
@@ -92,7 +94,7 @@ function MainNavigator() {
             <Stack.Screen
               name="Dashboard"
               component={DashboardScreen}
-              options={{ 
+              options={{
                 title: null,
                 detachPreviousScreen: false,
               }}
@@ -102,10 +104,10 @@ function MainNavigator() {
               component={ScrapbookEditorScreen}
               options={() => {
                 return {
-                  title:"",
+                  title: "",
                   headerBackTitle: null,
                   detachPreviousScreen: false,
-                  headerTitle:""
+                  headerTitle: "",
                 };
               }}
             />
@@ -131,7 +133,6 @@ const styles = StyleSheet.create({
 });
 
 export default function App() {
-
   React.useLayoutEffect(() => {
     // Check for updates
     async function checkForUpdates() {
@@ -150,6 +151,13 @@ export default function App() {
     checkForUpdates();
   }, []);
 
+  const [loaded, err] = useFonts({
+    AllSpice: require("./assets/fonts/allspice.ttf")
+  });
+
+  React.useEffect(() => {
+    if (loaded || err) SplashScreen.hideAsync();
+  }, [loaded, err]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
