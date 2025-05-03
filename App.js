@@ -97,6 +97,7 @@ function MainNavigator() {
               options={{
                 title: null,
                 detachPreviousScreen: false,
+                headerShown: false,
               }}
             />
             <Stack.Screen
@@ -152,7 +153,7 @@ export default function App() {
   }, []);
 
   const [loaded, err] = useFonts({
-    AllSpice: require("./assets/fonts/allspice.ttf")
+    Allspice: require("./assets/fonts/allspice.ttf")
   });
 
   React.useEffect(() => {

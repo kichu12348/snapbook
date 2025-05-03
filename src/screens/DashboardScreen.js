@@ -273,7 +273,7 @@ const DashboardScreen = ({ navigation }) => {
         end={{ x: 0, y: 1 }}
       />
       <MemoizedStarySkyBackground />
-      <View style={styles.container}>
+      <View style={[styles.container,{ paddingTop: insets.top+20 }]}>
         <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
           <View style={styles.headerTop}>
             <View>
@@ -381,13 +381,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#9575CD",
     marginBottom: 4,
+    fontFamily: "Allspice",
   },
   titleText: {
     fontSize: 32,
-    fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   subtitleText: {
     fontSize: 14,
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginTop: 20,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   topGradient: {
     position: "absolute",
@@ -486,9 +486,8 @@ const styles = StyleSheet.create({
   bottomText: {
     color: "#5C6BC080",
     fontSize: 50,
-    fontWeight: 800,
     textAlign: "center",
-    fontFamily:"AllSpice",
+    fontFamily:"Allspice",
   },
   bottomTextContainer: {
     minHeight: 200,

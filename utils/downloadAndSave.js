@@ -49,26 +49,17 @@ async function deleteFile(fileUri) {
 export async function saveToGallery(oUri, cb = () => {}) {
   const fileName = oUri.split("/").pop();
   const uri = await downloadFile(oUri, fileName, cb);
-  const { status } = await MediaLibrary.requestPermissionsAsync();
-  if (status === "granted") {
-    const asset = await MediaLibrary.createAssetAsync(uri);
-    const checkIfAlbumExists = await MediaLibrary.getAlbumAsync("snapbook");
-    if (checkIfAlbumExists) {
-      await MediaLibrary.addAssetsToAlbumAsync(
-        [asset],
-        checkIfAlbumExists.id,
-        false
-      );
-    } else {
-      await MediaLibrary.createAlbumAsync("snapbook", asset, false);
-    }
-    await deleteFile(uri); // Delete the file after saving to gallery
-    return true;
-  } else {
-    Alert.alert(
-      "Permission Required",
-      "Please grant permission to save the file to your gallery."
+  const asset = await MediaLibrary.createAssetAsync(uri);
+  const checkIfAlbumExists = await MediaLibrary.getAlbumAsync("snapbook");
+  if (checkIfAlbumExists) {
+    await MediaLibrary.addAssetsToAlbumAsync(
+      [asset],
+      checkIfAlbumExists.id,
+      false
     );
-    return false;
+  } else {
+    await MediaLibrary.createAlbumAsync("snapbook", asset, false);
   }
+  await deleteFile(uri); // Delete the file after saving to gallery
+  return true;
 }

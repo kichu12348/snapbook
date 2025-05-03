@@ -11,7 +11,11 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  Ionicons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -494,7 +498,11 @@ const ProfileScreen = ({ navigation }) => {
         hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
       >
         <View style={styles.blurButton}>
-          <Ionicons name="chevron-back" size={30} color="#FFFFFF" />
+          {Platform.OS === "ios" ? (
+            <Ionicons name="chevron-back-outline" size={30} color="#FFFFFF" />
+          ) : (
+            <AntDesign name="arrowleft" size={30} color="#FFFFFF" />
+          )}
         </View>
       </TouchableOpacity>
 

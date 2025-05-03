@@ -35,7 +35,7 @@ import { useAuth } from "../context/AuthContext";
 import { uploadImage } from "../../utils/upload";
 import axios from "axios";
 import { saveToGallery } from "../../utils/downloadAndSave";
-import { ca, se } from "date-fns/locale";
+import * as MediaLibrary from "expo-media-library";
 
 const { width: SCREEN_WIDTH, height } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
@@ -69,11 +69,7 @@ const StarySkyBackground = () => {
   );
 };
 
-const DownloadOverlay = ({
-  visible,
-  downloadProgressAnimStyle,
-  imageUri,
-}) => {
+const DownloadOverlay = ({ visible, downloadProgressAnimStyle, imageUri }) => {
   if (!visible) return null;
   return (
     <Animated.View style={styles.downloadOverlay}>
@@ -99,6 +95,8 @@ const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
 
   const handleDownload = async () => {
     if (!imageUri || isDownloading) return;
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") return;
     setIsDownloading(true);
     downloadProgress.value = 0;
     await saveToGallery(imageUri, (progress) => {
@@ -2023,7 +2021,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: 16,
     fontSize: 16,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   titleContainer: {
     paddingHorizontal: 16,
@@ -2042,10 +2040,9 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontSize: 18,
-    fontWeight: "500",
     color: "#FFFFFF",
     marginRight: 8,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   titleEditContainer: {
     flexDirection: "row",
@@ -2055,10 +2052,9 @@ const styles = StyleSheet.create({
   titleInput: {
     flex: 1,
     fontSize: 18,
-    fontWeight: "500",
     color: "#FFFFFF",
     paddingBottom: 4,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   titleEditDoneButton: {
     marginLeft: 10,
@@ -2097,10 +2093,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     textAlign: "center",
-    fontStyle: "italic",
-    fontFamily:"AllSpice",
-    fontWeight:200,
-    // lineHeight: 30,
+    fontFamily: "Allspice",
     paddingHorizontal: 2,
   },
   removeButton: {
@@ -2151,7 +2144,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: "top",
     fontSize: 16,
-    fontFamily: "AllSpice",
+    fontFamily: "Allspice",
   },
   textInputButtons: {
     flexDirection: "row",
@@ -2469,7 +2462,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 8,
-    fontFamily:"AllSpice",
+    fontFamily: "Allspice",
   },
   collaboratorsScrollContent: {
     paddingVertical: 4,
@@ -2500,7 +2493,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     maxWidth: 100,
-    fontFamily:"AllSpice",
+    fontFamily: "Allspice",
   },
   removeCollaboratorButton: {
     marginLeft: 6,
@@ -2702,26 +2695,26 @@ const styles = StyleSheet.create({
     gap: 20,
     ...StyleSheet.absoluteFillObject,
   },
-  downloadContainer:{
+  downloadContainer: {
     borderRadius: 16,
     height: 5,
     width: "80%",
     alignItems: "flex-start",
     justifyContent: "center",
-    backgroundColor:"rgba(42, 30, 92, 0.5)",
+    backgroundColor: "rgba(42, 30, 92, 0.5)",
     overflow: "hidden",
-    position:"relative"
+    position: "relative",
   },
-  downloadProgressBar:{
+  downloadProgressBar: {
     height: 5,
     backgroundColor: "#ffffff",
     borderRadius: 5,
   },
-  downloadImage:{
+  downloadImage: {
     position: "absolute",
     top: 0,
     bottom: 0,
-  }
+  },
 });
 
 export default ScrapbookEditorScreen;
