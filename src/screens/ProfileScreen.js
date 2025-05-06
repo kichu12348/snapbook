@@ -28,13 +28,15 @@ import Animated, {
   withSpring,
   Easing,
   interpolate,
-  Extrapolate,
+  Extrapolation,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 
 import { useAuth } from "../context/AuthContext";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { uploadImage } from "../../utils/upload";
+import { StatusBar } from "expo-status-bar";
+import { set } from "date-fns";
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = 110;
@@ -130,6 +132,23 @@ const ScrapbookCard = ({ scrapbook, onPress }) => {
   );
 };
 
+const BlurComponent = React.memo(({ blur = 20 }) => {
+  return (
+    <BlurView
+      intensity={blur}
+      experimentalBlurMethod="dimezisBlurView"
+      blurReductionFactor={12}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        ...StyleSheet.absoluteFillObject,
+      }}
+      tint="dark"
+    />
+  );
+});
+
 const ProfileScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { userData, signOut, updateProfile } = useAuth();
@@ -146,6 +165,7 @@ const ProfileScreen = ({ navigation }) => {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [hasScrolled, setHasScrolled] = useState(false);
 
   const [start, setStart] = useState(false);
 
@@ -172,9 +192,12 @@ const ProfileScreen = ({ navigation }) => {
     //fetchScrapbooks();
   }, []);
 
+
   // Handle scroll animation
   const handleScroll = (event) => {
     const offsetY = event.nativeEvent.contentOffset.y;
+    if (offsetY > 10 && !hasScrolled) setHasScrolled(true);
+    if (offsetY < 10 && hasScrolled) setHasScrolled(false);
     scrollY.value = offsetY;
   };
 
@@ -184,14 +207,14 @@ const ProfileScreen = ({ navigation }) => {
       scrollY.value,
       [0, 100],
       [1, 0.8],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     const translateY = interpolate(
       scrollY.value,
       [0, 150],
       [0, -20],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     return {
@@ -205,7 +228,7 @@ const ProfileScreen = ({ navigation }) => {
       scrollY.value,
       [0, 120],
       [1, 0.3],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     return {
@@ -223,7 +246,7 @@ const ProfileScreen = ({ navigation }) => {
             statsSectionOpacity.value,
             [0, 1],
             [50, 0],
-            Extrapolate.CLAMP
+            Extrapolation.CLAMP
           ),
         },
       ],
@@ -240,7 +263,7 @@ const ProfileScreen = ({ navigation }) => {
             contentOpacity.value,
             [0, 1],
             [30, 0],
-            Extrapolate.CLAMP
+            Extrapolation.CLAMP
           ),
         },
       ],
@@ -483,6 +506,7 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Background elements */}
+      <StatusBar style="light" backgroundColor="#000000" hidden/>
       <LinearGradient
         colors={["#000000", "#050008", "#0A000F", "#0F0015"]}
         style={StyleSheet.absoluteFillObject}
@@ -492,30 +516,35 @@ const ProfileScreen = ({ navigation }) => {
       <CosmicEffect />
 
       {/* Header back button */}
-      <TouchableOpacity
-        style={[styles.backButton, { top: insets.top + 10 }]}
-        onPress={() => navigation.goBack()}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      <View
+        style={[styles.header, { paddingTop: insets.top }]}
       >
-        <View style={styles.blurButton}>
-          {Platform.OS === "ios" ? (
-            <Ionicons name="chevron-back-outline" size={30} color="#FFFFFF" />
-          ) : (
-            <AntDesign name="arrowleft" size={30} color="#FFFFFF" />
-          )}
-        </View>
-      </TouchableOpacity>
+        {hasScrolled && <BlurComponent blur={40} />}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <View style={styles.blurButton}>
+            {Platform.OS === "ios" ? (
+              <Ionicons name="chevron-back-outline" size={30} color="#FFFFFF" />
+            ) : (
+              <AntDesign name="arrowleft" size={30} color="#FFFFFF" />
+            )}
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={handleLogoutModalOpenClose}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <View style={styles.blurButton}>
+            <Ionicons name="log-out-outline" size={30} color="#FFFFFF" />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       {/* Settings button */}
-      <TouchableOpacity
-        style={[styles.settingsButton, { top: insets.top + 10 }]}
-        onPress={handleLogoutModalOpenClose}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-      >
-        <View style={styles.blurButton}>
-          <Ionicons name="log-out-outline" size={30} color="#FFFFFF" />
-        </View>
-      </TouchableOpacity>
 
       <ScrollView
         ref={scrollRef}
@@ -804,29 +833,30 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
-
-  // Background effects
+  header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    ...StyleSheet.absoluteFillObject,
+    height: 80,
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    zIndex:100,
+  },
   particlesContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
 
   // Header components
-  backButton: {
-    position: "absolute",
-    left: 16,
-    zIndex: 100,
-  },
-  settingsButton: {
-    position: "absolute",
-    right: 16,
-    zIndex: 100,
-  },
+  backButton: {},
+  settingsButton: {},
   blurButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
   },
