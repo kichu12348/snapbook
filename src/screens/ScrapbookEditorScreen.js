@@ -177,7 +177,7 @@ const RenderImageItem = React.memo(
         delayLongPress={300}
         onPress={() => {
           clearLongPress();
-          openViewer(item.uri);
+          if(!isLongPressed) openViewer(item.uri);
         }}
       >
         <Image

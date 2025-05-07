@@ -36,17 +36,17 @@ import { useAuth } from "../context/AuthContext";
 import { useScrapbook } from "../context/ScrapbookContext";
 import { uploadImage } from "../../utils/upload";
 import { StatusBar } from "expo-status-bar";
-import { set } from "date-fns";
+import { RefreshControl } from "react-native-gesture-handler";
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = 110;
 
 // Cosmic particles effect component
-const CosmicEffect = () => {
+const CosmicEffect = React.memo(() => {
   return (
     <View style={styles.particlesContainer}>
-      {Array.from({ length: 40 }).map((_, index) => {
-        const size = Math.random() * 2.5 + 0.5;
+      {Array.from({ length: 100 }).map((_, index) => {
+        const size = Math.random() * 3 + 1;
         const opacity = Math.random() * 0.3 + 0.05;
         const top = Math.random() * height;
         const left = Math.random() * width;
@@ -69,7 +69,7 @@ const CosmicEffect = () => {
       })}
     </View>
   );
-};
+});
 
 const ScrapbookCard = ({ scrapbook, onPress }) => {
   const scaleAnim = useSharedValue(0.96);
@@ -110,19 +110,19 @@ const ScrapbookCard = ({ scrapbook, onPress }) => {
           </Text>
           <View style={styles.scrapbookMetaRow}>
             <View style={styles.scrapbookMetaItem}>
-              <Ionicons name="images-outline" size={14} color="#9575CD" />
+              <Ionicons name="images-outline" size={14} color="#5C6BC0" />
               <Text style={styles.scrapbookMetaText}>
                 {scrapbook.imageCount}
               </Text>
             </View>
             <View style={styles.scrapbookMetaItem}>
-              <Ionicons name="people-outline" size={14} color="#9575CD" />
+              <Ionicons name="people-outline" size={14} color="#5C6BC0" />
               <Text style={styles.scrapbookMetaText}>
                 {scrapbook.collaborators}
               </Text>
             </View>
             <View style={styles.scrapbookMetaItem}>
-              <Ionicons name="time-outline" size={14} color="#9575CD" />
+              <Ionicons name="time-outline" size={14} color="#5C6BC0" />
               <Text style={styles.scrapbookMetaText}>{scrapbook.date}</Text>
             </View>
           </View>
@@ -173,8 +173,6 @@ const ProfileScreen = ({ navigation }) => {
   const scrollRef = useRef(null);
 
   // Animation values
-  const headerHeight = useSharedValue(300);
-  const headerOpacity = useSharedValue(1);
   const avatarScale = useSharedValue(1);
   const statsSectionOpacity = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
@@ -191,7 +189,6 @@ const ProfileScreen = ({ navigation }) => {
 
     //fetchScrapbooks();
   }, []);
-
 
   // Handle scroll animation
   const handleScroll = (event) => {
@@ -492,7 +489,16 @@ const ProfileScreen = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient
-          colors={["#000000", "#000000", "#050008", "#0A000F", "#0F0015"]}
+          colors={[
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#050011",
+            "#0A0022",
+            "#0F0033",
+            "#140044",
+          ]}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -506,9 +512,18 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Background elements */}
-      <StatusBar style="light" backgroundColor="#000000" hidden/>
+      <StatusBar style="light" translucent />
       <LinearGradient
-        colors={["#000000", "#050008", "#0A000F", "#0F0015"]}
+        colors={[
+          "#000000",
+          "#000000",
+          "#000000",
+          "#000000",
+          "#050011",
+          "#0A0022",
+          "#0F0033",
+          "#140044",
+        ]}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -516,9 +531,7 @@ const ProfileScreen = ({ navigation }) => {
       <CosmicEffect />
 
       {/* Header back button */}
-      <View
-        style={[styles.header, { paddingTop: insets.top }]}
-      >
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         {hasScrolled && <BlurComponent blur={40} />}
         <TouchableOpacity
           style={styles.backButton}
@@ -568,7 +581,7 @@ const ProfileScreen = ({ navigation }) => {
                 style={styles.avatarContainer}
               >
                 <LinearGradient
-                  colors={["#5C6BC0", "#9575CD"]}
+                  colors={["#5C6BC0", "#5C6BC0", "#9575CD"]}
                   style={styles.avatarGradientBorder}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -586,7 +599,7 @@ const ProfileScreen = ({ navigation }) => {
                       <MaterialCommunityIcons
                         name="face-man-outline"
                         size={AVATAR_SIZE * 0.5}
-                        color="#9575CD"
+                        color="#5C6BC0"
                       />
                     </View>
                   )}
@@ -607,12 +620,13 @@ const ProfileScreen = ({ navigation }) => {
                       selectionColor="#9575CD"
                       autoFocus
                       maxLength={20}
+                      onBlur={() => setIsEditingUsername(false)}
                     />
                     <TouchableOpacity
                       onPress={saveUsername}
                       style={styles.saveButton}
                     >
-                      <Ionicons name="checkmark" size={22} color="#9575CD" />
+                      <Ionicons name="checkmark" size={22} color="#5C6BC0" />
                     </TouchableOpacity>
                   </BlurView>
                 </View>
@@ -627,7 +641,7 @@ const ProfileScreen = ({ navigation }) => {
                   <Ionicons
                     name="create-outline"
                     size={18}
-                    color="#9575CD"
+                    color="#5C6BC0"
                     style={styles.editIcon}
                   />
                 </TouchableOpacity>
@@ -641,9 +655,9 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.statCard}>
             <BlurView style={styles.statCardBlur} intensity={20} tint="dark">
               <LinearGradient
-                colors={["rgba(20, 10, 40, 0.7)", "rgba(10, 5, 20, 0.5)"]}
+                colors={["#000000", "#050011", "#140044"]}
                 style={styles.statCardGradient}
-                start={{ x: 0, y: 0 }}
+                start={{ x: 0.5, y: 0 }}
                 end={{ x: 0, y: 1 }}
               >
                 <Text style={styles.statValue}>{userStats.total}</Text>
@@ -655,7 +669,7 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.statCard}>
             <BlurView style={styles.statCardBlur} intensity={20} tint="dark">
               <LinearGradient
-                colors={["rgba(20, 10, 40, 0.7)", "rgba(10, 5, 20, 0.5)"]}
+                colors={["#000000", "#050011", "#140044"]}
                 style={styles.statCardGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -669,10 +683,10 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.statCard}>
             <BlurView style={styles.statCardBlur} intensity={20} tint="dark">
               <LinearGradient
-                colors={["rgba(20, 10, 40, 0.7)", "rgba(10, 5, 20, 0.5)"]}
+                colors={["#000000", "#050011", "#140044"]}
                 style={styles.statCardGradient}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
+                end={{ x: 0.5, y: 1 }}
               >
                 <Text style={styles.statValue}>{userStats.collaborating}</Text>
                 <Text style={styles.statLabel}>Shared</Text>
@@ -787,12 +801,8 @@ const ProfileScreen = ({ navigation }) => {
         {/*version and app updates */}
         <View style={{ height: 50 }} />
         <View>
-          <Text style={{ color: "#9575CD", textAlign: "center", fontSize: 12 }}>
-            Version 2.0.0
-          </Text>
-          <Text style={{ color: "#9575CD", textAlign: "center", fontSize: 12 }}>
-            App updates are automatic
-          </Text>
+          <Text style={styles.bottomText}>Version 2.0.0</Text>
+          <Text style={styles.bottomText}>Made wid ❤️ by Kichu</Text>
         </View>
       </ScrollView>
 
@@ -838,13 +848,21 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     ...StyleSheet.absoluteFillObject,
-    height: 80,
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-    zIndex:100,
+    zIndex: 100,
+    ...Platform.select({
+      ios: {
+        height: 100,
+        paddingBottom: 10,
+      },
+      android: {
+        height: 80,
+      },
+    }),
   },
   particlesContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -935,6 +953,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 4,
+    fontFamily: "Allspice",
   },
   editIcon: {
     marginLeft: 8,
@@ -958,6 +977,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     width: 150,
     textAlign: "center",
+    fontFamily: "Allspice",
   },
   saveButton: {
     marginLeft: 8,
@@ -1004,7 +1024,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: "#9575CD",
+    color: "#5C6BC0",
   },
 
   // Create button
@@ -1039,7 +1059,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   loaderText: {
-    color: "#9575CD",
+    color: "#5C6BC0",
     marginTop: 16,
     fontSize: 14,
   },
@@ -1066,7 +1086,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   sectionBadgeText: {
-    color: "#9575CD",
+    color: "#5C6BC0",
     fontSize: 12,
     fontWeight: "600",
   },
@@ -1142,6 +1162,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 8,
+    fontFamily: "Allspice",
   },
   emptyStateText: {
     fontSize: 14,
@@ -1149,6 +1170,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
     paddingHorizontal: 20,
+    fontFamily: "Allspice",
   },
   emptyStateButton: {
     width: "70%",
@@ -1165,6 +1187,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: "Allspice",
   },
 
   // Floating action button
@@ -1279,6 +1302,12 @@ const styles = StyleSheet.create({
     color: "#5C6BC0",
     marginTop: 16,
     fontSize: 14,
+  },
+  bottomText: {
+    color: "#5C6BC0",
+    textAlign: "center",
+    fontSize: 12,
+    fontFamily: "Allspice",
   },
 });
 
