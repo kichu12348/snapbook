@@ -1302,6 +1302,7 @@ const styles = StyleSheet.create({
     color: "#5C6BC0",
     marginTop: 16,
     fontSize: 14,
+    fontFamily: "Allspice",
   },
   bottomText: {
     color: "#5C6BC0",
