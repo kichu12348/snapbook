@@ -741,7 +741,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   const handleTextViewerOpen = (item) => {
-    if(!item||imageUri) return;
+    if (!item || imageUri) return;
     setTextViewerItem(item);
     hideHeaderLeftButton();
     textViewerScale.value = withTiming(1, { duration: 300 });
@@ -1322,7 +1322,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     };
   });
   const openViewer = (uri) => {
-    if (!uri||textViewerItem) return;
+    if (!uri || textViewerItem) return;
     setIsImageViewerOpen(true);
     hideHeaderLeftButton();
     imageViewOpacity.value = withTiming(1, {
@@ -2088,19 +2088,21 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         onClose={closeViewer}
         animatedImage={imageViewAnimatedStyle}
       />
-      <Animated.View
-        style={[styles.textViewerOverlay, animatedTextViewerStyle]}
-      >
-        <BlurComponent blur={50} />
-        <LinearGradient
-          colors={["#000000", "transparent", "transparent", "transparent"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <TextViewerOverlay
-          item={textViewerItem}
-          close={handleTextViewerClose}
-        />
-      </Animated.View>
+      {textViewerItem && (
+        <Animated.View
+          style={[styles.textViewerOverlay, animatedTextViewerStyle]}
+        >
+          <BlurComponent blur={50} />
+          <LinearGradient
+            colors={["#000000", "transparent", "transparent", "transparent"]}
+            style={StyleSheet.absoluteFill}
+          />
+          <TextViewerOverlay
+            item={textViewerItem}
+            close={handleTextViewerClose}
+          />
+        </Animated.View>
+      )}
     </>
   );
 };
