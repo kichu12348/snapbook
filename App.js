@@ -109,6 +109,7 @@ function MainNavigator() {
                   headerBackTitle: null,
                   detachPreviousScreen: false,
                   headerTitle: "",
+                  headerLeft: () => null,
                 };
               }}
             />

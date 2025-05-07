@@ -14,8 +14,9 @@ import {
   Alert,
   Keyboard,
   Linking,
+  TouchableWithoutFeedback,
 } from "react-native";
-import { Ionicons, Octicons } from "@expo/vector-icons";
+import { Entypo, Ionicons, Octicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Animated, {
   useSharedValue,
@@ -36,6 +37,7 @@ import { uploadImage } from "../../utils/upload";
 import axios from "axios";
 import { saveToGallery } from "../../utils/downloadAndSave";
 import * as MediaLibrary from "expo-media-library";
+import { hi } from "date-fns/locale";
 
 const { width: SCREEN_WIDTH, height } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
@@ -177,7 +179,7 @@ const RenderImageItem = React.memo(
         delayLongPress={300}
         onPress={() => {
           clearLongPress();
-          if(!isLongPressed) openViewer(item.uri);
+          if (!isLongPressed) openViewer(item.uri);
         }}
       >
         <Image
@@ -217,8 +219,14 @@ const RenderTextItem = React.memo(
     initiateRemoveItem,
     deleteButtonAnimatedStyle,
     longPressedItem,
+    openViewer,
   }) => {
     const isLongPressed = item?._id === longPressedItem;
+    const textContent = React.useMemo(() => {
+      return item.content.length > 50
+        ? item.content.substring(0, 50) + "..."
+        : item.content;
+    }, []);
 
     return (
       <Pressable
@@ -230,9 +238,12 @@ const RenderTextItem = React.memo(
         ]}
         onLongPress={() => handleLongPress(item?._id)}
         delayLongPress={300}
-        onPress={clearLongPress}
+        onPress={() => {
+          clearLongPress();
+          if (!isLongPressed) openViewer(item);
+        }}
       >
-        <Text style={styles.textItem}>{item.content}</Text>
+        <Text style={styles.textItem}>{textContent}</Text>
         {isLongPressed && (
           <Animated.View
             style={[styles.deleteButtonContainer, deleteButtonAnimatedStyle]}
@@ -580,7 +591,7 @@ const CollaboratorOverlayComponent = ({
   );
 };
 
-const BlurComponent = React.memo(({ blur = 20 }) => {
+const BlurComponent = React.memo(({ blur = 20, style }) => {
   return (
     <BlurView
       intensity={blur}
@@ -591,11 +602,35 @@ const BlurComponent = React.memo(({ blur = 20 }) => {
         top: 0,
         left: 0,
         ...StyleSheet.absoluteFillObject,
+        ...style,
       }}
       tint="dark"
     />
   );
 });
+
+function TextViewerOverlay({ item, close }) {
+  if (!item) return null;
+  return (
+    <View style={styles.textItemViewerContainer}>
+      <View style={styles.textItemViewerHeader}>
+        <TouchableOpacity onPress={close} style={styles.closeButton}>
+          <Ionicons name="close" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        style={styles.textItemViewerScroll}
+        contentContainerStyle={styles.textItemViewerContentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.textItemViewerTextContainer}>
+          <Text style={styles.textItemViewerText}>{item.content}</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
 
 const ScrapbookEditorScreen = ({ navigation, route }) => {
   // Get scrapbook ID from route params if editing existing scrapbook
@@ -667,6 +702,8 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const [showTimeline, setShowTimeline] = useState(false);
   const timelineHeight = useSharedValue(0);
   const timelineOpacity = useSharedValue(0);
+  const textViewerScale = useSharedValue(0);
+  const textViewerOpacity = useSharedValue(0);
 
   // New states for collaborator search
   const [searchQuery, setSearchQuery] = useState("");
@@ -675,8 +712,53 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   const [searchError, setSearchError] = useState(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageUri, setImageUri] = useState(null);
+  const [textViewerItem, setTextViewerItem] = useState(null);
+
+  const animatedTextViewerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: textViewerScale.value }],
+      opacity: textViewerOpacity.value,
+    };
+  });
+
+  const hideHeaderLeftButton = () => {
+    navigation.setOptions({
+      headerLeft: () => null,
+    });
+  };
+
+  const showHeaderLeftButton = () => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={navigation.goBack}
+          style={styles.headerButton}
+        >
+          <Ionicons name="chevron-back-outline" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
+      ),
+    });
+  };
+
+  const handleTextViewerOpen = (item) => {
+    if(!item||imageUri) return;
+    setTextViewerItem(item);
+    hideHeaderLeftButton();
+    textViewerScale.value = withTiming(1, { duration: 300 });
+    textViewerOpacity.value = withTiming(1, { duration: 300 });
+  };
+
+  const handleTextViewerClose = () => {
+    textViewerScale.value = withTiming(0, { duration: 300 });
+    textViewerOpacity.value = withTiming(0, { duration: 300 });
+    showHeaderLeftButton();
+    setTimeout(() => {
+      setTextViewerItem(null);
+    }, 300);
+  };
 
   useEffect(() => {
+    showHeaderLeftButton();
     if (socketRef.current) {
       socketRef.current.on("scrapbook-deleted", (data) => {
         if (data.scrapbookId === scrapbookId) {
@@ -1240,7 +1322,9 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     };
   });
   const openViewer = (uri) => {
+    if (!uri||textViewerItem) return;
     setIsImageViewerOpen(true);
+    hideHeaderLeftButton();
     imageViewOpacity.value = withTiming(1, {
       duration: 300,
       easing: Easing.out(Easing.ease),
@@ -1249,6 +1333,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
   };
 
   const closeViewer = () => {
+    showHeaderLeftButton();
     imageViewOpacity.value = withTiming(0, {
       duration: 300,
       easing: Easing.in(Easing.ease),
@@ -1380,6 +1465,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
                 initiateRemoveItem={initiateRemoveItem}
                 deleteButtonAnimatedStyle={deleteButtonAnimatedStyle}
                 longPressedItem={longPressedItem}
+                openViewer={handleTextViewerOpen}
               />
             )}
           </React.Fragment>
@@ -2002,6 +2088,19 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
         onClose={closeViewer}
         animatedImage={imageViewAnimatedStyle}
       />
+      <Animated.View
+        style={[styles.textViewerOverlay, animatedTextViewerStyle]}
+      >
+        <BlurComponent blur={50} />
+        <LinearGradient
+          colors={["#000000", "transparent", "transparent", "transparent"]}
+          style={StyleSheet.absoluteFill}
+        />
+        <TextViewerOverlay
+          item={textViewerItem}
+          close={handleTextViewerClose}
+        />
+      </Animated.View>
     </>
   );
 };
@@ -2141,7 +2240,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
+    paddingVertical: 8,
     minHeight: 100,
+    maxHeight: 200,
     textAlignVertical: "top",
     fontSize: 16,
     fontFamily: "Allspice",
@@ -2714,6 +2815,54 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
+  },
+  textItemViewerContainer: {
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  textItemViewerScroll: {
+    flex: 1,
+  },
+  textItemViewerContentContainer: {
+    paddingVertical: 16,
+    paddingBottom: 100,
+  },
+  textItemViewerText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    textAlign: "center",
+    fontFamily: "Allspice",
+    paddingHorizontal: 2,
+  },
+  textItemViewerTextContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+    minHeight: height * 0.6,
+    width,
+    padding: 16,
+  },
+  textItemViewerHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  textViewerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 200,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  headerButton: {
+    padding: 8,
+    marginLeft: 10,
+    height: 50,
   },
 });
 

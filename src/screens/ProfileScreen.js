@@ -539,11 +539,7 @@ const ProfileScreen = ({ navigation }) => {
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <View style={styles.blurButton}>
-            {Platform.OS === "ios" ? (
               <Ionicons name="chevron-back-outline" size={30} color="#FFFFFF" />
-            ) : (
-              <AntDesign name="arrowleft" size={30} color="#FFFFFF" />
-            )}
           </View>
         </TouchableOpacity>
         <TouchableOpacity
