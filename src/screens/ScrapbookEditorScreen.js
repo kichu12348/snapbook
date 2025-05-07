@@ -2781,7 +2781,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 20,
     gap: 30,
   },
   overlayCloseButton: {
