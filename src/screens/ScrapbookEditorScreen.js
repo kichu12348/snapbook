@@ -13,10 +13,8 @@ import {
   Platform,
   Alert,
   Keyboard,
-  Linking,
-  TouchableWithoutFeedback,
 } from "react-native";
-import { Entypo, Ionicons, Octicons } from "@expo/vector-icons";
+import { Ionicons, Octicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import Animated, {
   useSharedValue,
@@ -37,7 +35,7 @@ import { uploadImage } from "../../utils/upload";
 import axios from "axios";
 import { saveToGallery } from "../../utils/downloadAndSave";
 import * as MediaLibrary from "expo-media-library";
-import { hi } from "date-fns/locale";
+
 
 const { width: SCREEN_WIDTH, height } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
@@ -83,6 +81,7 @@ const DownloadOverlay = ({ visible, downloadProgressAnimStyle, imageUri }) => {
     </Animated.View>
   );
 };
+
 
 //
 const ImageViewOverlay = ({ imageUri, onClose, animatedImage }) => {
@@ -1686,6 +1685,7 @@ const ScrapbookEditorScreen = ({ navigation, route }) => {
     );
   };
 
+  
   // Confirmation Overlay component
   const ConfirmOverlayComponent = () => {
     if (!confirmOverlay.visible) return null;
