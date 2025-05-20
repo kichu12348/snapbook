@@ -48,6 +48,8 @@ const DreamyTheme = {
 function MainNavigator() {
   const { isLoading, userToken } = useAuth();
 
+  if(!isLoading) SplashScreen.hideAsync();
+
   if (isLoading) {
     // Loading screen
     return (
@@ -135,7 +137,8 @@ const styles = StyleSheet.create({
 });
 
 export default function App() {
-  React.useLayoutEffect(() => {
+  const [hasFontLoaded,setHasFontLoaded]=React.useState(false);
+  React.useEffect(() => {
     // Check for updates
     async function checkForUpdates() {
       if (__DEV__) return;
@@ -158,7 +161,7 @@ export default function App() {
   });
 
   React.useEffect(() => {
-    if (loaded || err) SplashScreen.hideAsync();
+    if (loaded || err) if(!hasFontLoaded) setHasFontLoaded(true);
   }, [loaded, err]);
 
   return (
@@ -166,7 +169,7 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <ScrapbookProvider>
-            <MainNavigator />
+            <MainNavigator hasFontLoaded={hasFontLoaded} />
           </ScrapbookProvider>
         </AuthProvider>
       </SafeAreaProvider>
